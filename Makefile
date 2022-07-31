@@ -1,5 +1,5 @@
 # CC = cc -c
-CFLAGS = -std=c89
+CFLAGS = -std=c89 --debug
 
 # ABC = a b c
 # $(ABC) = a b c

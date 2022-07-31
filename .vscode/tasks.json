@@ -1,0 +1,31 @@
+{
+    "tasks": [
+        // {
+        //     "type": "shell",
+        //     "label": "Build with Clang",
+        //     "command": "/usr/bin/clang",
+        //     "args": [
+        //         "-std=c89",
+        //         "-g",
+        //         "${file}",
+        //         "-o",
+        //         "${fileDirname}/a.o",
+        //         "--debug"
+        //     ],
+        //     "group": {
+        //         "kind": "build",
+        //         "isDefault": true
+        //     }
+        // }
+        {
+            "type": "shell",
+            "label": "Build with Makefile",
+            "command": "make",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ],
+    "version": "2.0.0"
+}
