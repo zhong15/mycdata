@@ -2,13 +2,23 @@
 #include <stdlib.h>
 #include "mycdata.h"
 
+void test_print();
 void test_stack();
 void test_queue();
 
 int main(int argc, char **argv)
 {
+    test_print();
     test_stack();
     test_queue();
+}
+
+void test_print()
+{
+    printError("Hello, %s %d\n", "World!", 123);
+    printWarn("Hello, %s %d\n", "World!", 123);
+    printInfo("Hello, %s %d\n", "World!", 123);
+    printDebug("Hello, %s %d\n", "World!", 123);
 }
 
 void test_stack()

@@ -1,3 +1,8 @@
+void printError(const char *msg, ...);
+void printWarn(const char *msg, ...);
+void printInfo(const char *msg, ...);
+void printDebug(const char *msg, ...);
+
 struct Stack
 {
     void **els;
@@ -27,3 +32,22 @@ void *queuePoll(struct Queue *p);
 void *queuePeek(struct Queue *p);
 int queueSize(struct Queue *p);
 void queueClear(struct Queue *p);
+
+struct avlTreeNode
+{
+    struct avlTreeNode *parent, *left, *right;
+    int key, height;
+    void *val;
+};
+struct avlTree
+{
+    struct avlTreeNode *root;
+    int size;
+    int (*key)(void *);
+};
+struct avlTree *avlTreeNew(int (*key)(void *));
+void avlTreeFree(struct avlTree *p);
+int avlTreeAdd(struct avlTree *p, void *el);
+int avlTreeRemove(struct avlTree *p, void *el);
+void *avlTreeSearch(struct avlTree *p, void *el);
+void avlTreePrint(struct avlTree *p, void (*printVal)(void *));
