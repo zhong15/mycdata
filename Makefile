@@ -1,5 +1,11 @@
+profile =
+
 # CC = cc -c
-CFLAGS = -std=c89 --debug
+ifeq ($(profile), DEBUG)
+CFLAGS = -std=c89 --debug -D DEBUG
+else
+CFLAGS = -std=c89
+endif
 
 # ABC = a b c
 # $(ABC) = a b c

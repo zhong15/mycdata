@@ -5,12 +5,14 @@
 void test_print();
 void test_stack();
 void test_queue();
+void test_avlTree();
 
 int main(int argc, char **argv)
 {
-    test_print();
-    test_stack();
-    test_queue();
+    // test_print();
+    // test_stack();
+    // test_queue();
+    test_avlTree();
 }
 
 void test_print()
@@ -114,4 +116,47 @@ void test_queue()
     queueFree(queue);
     printf("free queue success!\n");
     return;
+}
+
+int test_avlTreeIntKey(void *val)
+{
+    return *(int *)val;
+}
+void test_avlTreePrintfInt(void *val)
+{
+    printf("%d ", *(int *)val);
+}
+void test_avlTree()
+{
+    struct avlTree *tree = avlTreeNew(&test_avlTreeIntKey);
+    if (!tree)
+    {
+        printError("create tree error\n");
+        return;
+    }
+
+    printInfo("===============\n");
+
+    int nums[] = {110, 140, 120, 130, 145, 150, 250, 50, 100, 25, 77, 99, 33, 1, 2, 3, 4, 0, 8, 9};
+    int i;
+    for (i = 0; i < 20; i++)
+    {
+        printInfo("add %2d %4d: ", i, nums[i]);
+        avlTreeAdd(tree, &nums[i]);
+        avlTreePrint(tree, test_avlTreePrintfInt);
+        printf("\n");
+    }
+
+    printInfo("==============\n");
+
+    int nums2[] = {10, 110, 5, 120, 11, 140, 130, 2, 15, 3, 4, 7, 6, 145, 1, 14, 12, 8, 13, 9, 0};
+    for (i = 0; i < 20; i++)
+    {
+        printInfo("rm  %2d %4d: ", i, nums[i]);
+        avlTreeRemove(tree, &nums[i]);
+        avlTreePrint(tree, test_avlTreePrintfInt);
+        printf("\n");
+    }
+
+    avlTreeFree(tree);
 }
