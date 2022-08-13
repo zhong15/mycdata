@@ -50,6 +50,8 @@ void avlTreeFree(struct avlTree *p);
 int avlTreeAdd(struct avlTree *p, void *el);
 int avlTreeRemove(struct avlTree *p, void *el);
 void *avlTreeSearch(struct avlTree *p, void *el);
+void *avlTreeFindMin(struct avlTree *p);
+void *avlTreeFindMax(struct avlTree *p);
 #ifdef DEBUG
 void avlTreePrint(struct avlTree *p, void (*printVal)(void *));
 #endif

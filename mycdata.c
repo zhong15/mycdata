@@ -231,7 +231,7 @@ static struct avlTreeNode *avlTreeRotateLeft(struct avlTreeNode *n);
 static struct avlTreeNode *avlTreeRotateRight(struct avlTreeNode *n);
 static int avlTreeLh(struct avlTreeNode *n);
 static int avlTreeRh(struct avlTreeNode *n);
-static struct avlTreeNode *avlTreeFindMin(struct avlTreeNode *n);
+static struct avlTreeNode *avlTreeNodeFindMin(struct avlTreeNode *n);
 
 struct avlTree *avlTreeNew(int (*key)(void *))
 {
@@ -363,7 +363,7 @@ int avlTreeRemove(struct avlTree *p, void *el)
 
     if (n->left && n->right)
     {
-        struct avlTreeNode *rm = avlTreeFindMin(n->right);
+        struct avlTreeNode *rm = avlTreeNodeFindMin(n->right);
         n->key = rm->key;
         n->val = rm->val;
 
@@ -490,6 +490,38 @@ void *avlTreeSearch(struct avlTree *p, void *el)
     }
     return NULL;
 }
+void *avlTreeFindMin(struct avlTree *p)
+{
+    if (p && p->root)
+    {
+        struct avlTreeNode *n = p->root;
+        while (n)
+        {
+            if (n->left)
+                n = n->left;
+            else
+                return n->val;
+        }
+        return NULL;
+    }
+    return NULL;
+}
+void *avlTreeFindMax(struct avlTree *p)
+{
+    if (p && p->root)
+    {
+        struct avlTreeNode *n = p->root;
+        while (n)
+        {
+            if (n->right)
+                n = n->right;
+            else
+                return n->val;
+        }
+        return NULL;
+    }
+    return NULL;
+}
 static struct avlTreeNode *avlTreeBalance(struct avlTreeNode *b)
 {
     if (avlTreeLh(b) - avlTreeRh(b) > 1)
@@ -586,7 +618,7 @@ static int avlTreeRh(struct avlTreeNode *n)
 {
     return n->right ? n->right->height : -1;
 }
-static struct avlTreeNode *avlTreeFindMin(struct avlTreeNode *n)
+static struct avlTreeNode *avlTreeNodeFindMin(struct avlTreeNode *n)
 {
     while (n->left)
         n = n->left;
@@ -609,9 +641,11 @@ static void avlTreeCheck(struct avlTreeNode *n)
         if (n->right && n->right->parent != n)
             printError("parent set error");
 
-        if (avlTreeHeight(n->left) - avlTreeHeight(n->right) > 1)
+        int lh = avlTreeHeight(n->left);
+        int rh = avlTreeHeight(n->right);
+        if (lh - rh > 1)
             printError("error");
-        if (avlTreeHeight(n->right) - avlTreeHeight(n->left) > 1)
+        if (rh - lh > 1)
             printError("error");
     }
 }
