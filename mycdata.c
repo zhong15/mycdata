@@ -371,6 +371,8 @@ int avlTreeRemove(struct avlTree *p, void *el)
             rm->parent->left = rm->right;
         else
             rm->parent->right = rm->right;
+        if (rm->right)
+            rm->right->parent = rm->parent;
 
         struct avlTreeNode *b = rm->parent;
         avlTreeNodeFree(rm);
@@ -602,6 +604,11 @@ static void avlTreeCheck(struct avlTreeNode *n)
 {
     if (n)
     {
+        if (n->left && n->left->parent != n)
+            printError("parent set error");
+        if (n->right && n->right->parent != n)
+            printError("parent set error");
+
         if (avlTreeHeight(n->left) - avlTreeHeight(n->right) > 1)
             printError("error");
         if (avlTreeHeight(n->right) - avlTreeHeight(n->left) > 1)
