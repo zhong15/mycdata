@@ -6,6 +6,7 @@ void test_print();
 void test_stack();
 void test_queue();
 void test_avlTree();
+void test_avlTree2();
 
 int main(int argc, char **argv)
 {
@@ -13,6 +14,7 @@ int main(int argc, char **argv)
     // test_stack();
     // test_queue();
     test_avlTree();
+    test_avlTree2();
 }
 
 void test_print()
@@ -157,6 +159,75 @@ void test_avlTree()
         avlTreePrint(tree, test_avlTreePrintfInt);
         printf("\n");
     }
+
+    avlTreeFree(tree);
+
+    printInfo("==============\n");
+}
+void test_avlTreePrintfInt2(void *val)
+{
+    // printf("%d ", *(int *)val);
+}
+void test_avlTree2()
+{
+    /* Copy from <<Data Structures and Algorithm Analysis in Java>> */
+
+    struct avlTree *tree = avlTreeNew(&test_avlTreeIntKey);
+    if (!tree)
+    {
+        printError("create tree error\n");
+        return;
+    }
+
+    int SMALL = 40;
+    int NUMS = 10000; // must be even
+    int GAP = 37;
+
+    printInfo("Checking... (no more output means success)\n");
+
+    int *nums = malloc(sizeof(int) * (NUMS + 1));
+    if (!nums)
+    {
+        printError("create nums error\n");
+        return;
+    }
+
+    int i = 0;
+    for (i = GAP; i != 0; i = (i + GAP) % NUMS)
+    {
+        *(nums + i) = i;
+        //    System.out.println( "INSERT: " + i );
+        avlTreeAdd(tree, nums + i);
+        // if (NUMS < SMALL)
+        avlTreePrint(tree, test_avlTreePrintfInt2);
+    }
+
+    for (i = 1; i < NUMS; i += 2)
+    {
+        //   System.out.println( "REMOVE: " + i );
+        avlTreeRemove(tree, nums + i);
+        // if (NUMS < SMALL)
+        avlTreePrint(tree, test_avlTreePrintfInt2);
+    }
+
+    // if (NUMS < SMALL)
+    //     t.printTree();
+    avlTreePrint(tree, test_avlTreePrintfInt2);
+
+    int *min = (int *)avlTreeFindMin(tree);
+    int *max = (int *)avlTreeFindMax(tree);
+    if (!min || (*min) != 2 || !max || (*max) != NUMS - 2)
+        printError("FindMin or FindMax error!");
+
+    for (i = 2; i < NUMS; i += 2)
+        if (!avlTreeSearch(tree, nums + i))
+            printError("Find error1!");
+
+    for (i = 1; i < NUMS; i += 2)
+        if (avlTreeSearch(tree, nums + i))
+            printError("Find error2!");
+
+    free(nums);
 
     avlTreeFree(tree);
 }
