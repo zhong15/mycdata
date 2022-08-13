@@ -388,49 +388,21 @@ int avlTreeRemove(struct avlTree *p, void *el)
             }
         }
     }
-    else if (n->left)
+    else if (n->left || n->right)
     {
-        struct avlTreeNode *l = n->left;
-        n->key = l->key;
-        n->val = l->val;
+        struct avlTreeNode *lr = n->left ? n->left : n->right;
+        n->key = lr->key;
+        n->val = lr->val;
 
-        n->left = l->left;
+        n->left = lr->left;
         if (n->left)
             n->left->parent = n;
 
-        n->right = l->right;
+        n->right = lr->right;
         if (n->right)
             n->right->parent = n;
 
-        avlTreeNodeFree(l);
-
-        while (n)
-        {
-            n = avlTreeBalance(n);
-            if (n->parent)
-                n = n->parent;
-            else
-            {
-                p->root = n;
-                break;
-            }
-        }
-    }
-    else if (n->right)
-    {
-        struct avlTreeNode *r = n->right;
-        n->key = r->key;
-        n->val = r->val;
-
-        n->left = r->left;
-        if (n->left)
-            n->left->parent = n;
-
-        n->right = r->right;
-        if (n->right)
-            n->right->parent = n;
-
-        avlTreeNodeFree(r);
+        avlTreeNodeFree(lr);
 
         while (n)
         {
