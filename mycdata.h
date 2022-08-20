@@ -1,3 +1,13 @@
+#ifndef MYCDATA_H_
+#define MYCDATA_H_
+#ifndef RB_RED
+#define RB_RED 1
+#endif
+
+#ifndef RB_BLACK
+#define RB_BLACK 0
+#endif
+
 void printError(const char *msg, ...);
 void printWarn(const char *msg, ...);
 void printInfo(const char *msg, ...);
@@ -54,4 +64,35 @@ void *avlTreeFindMin(struct avlTree *p);
 void *avlTreeFindMax(struct avlTree *p);
 #ifdef DEBUG
 void avlTreePrint(struct avlTree *p, void (*printVal)(void *));
+#endif
+
+/* copy from CLRS 3 */
+struct rbTreeNode
+{
+    struct rbTreeNode *parent;
+    struct rbTreeNode *left;
+    struct rbTreeNode *right;
+    int color;
+    int key;
+    void *val;
+};
+struct rbTree
+{
+    struct rbTreeNode *root;
+    int size;
+    int (*key)(void *);
+};
+struct rbTree *rbTreeNew(int (*key)(void *));
+void rbTreeFree(struct rbTree *t);
+int rbTreeInsert(struct rbTree *t, void *el);
+int rbTreeDelete(struct rbTree *t, void *el);
+void *rbTreeSearch(struct rbTree *t, void *el);
+void *rbTreeFindMin(struct rbTree *t);
+void *rbTreeFindMax(struct rbTree *t);
+static struct rbTreeNode RB_NIL2;
+static struct rbTreeNode *RB_NIL = &RB_NIL2;
+#ifdef DEBUG
+void rbTreePrint(struct rbTree *t, void (*printVal)(void *));
+#endif
+
 #endif

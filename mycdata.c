@@ -663,3 +663,543 @@ void avlTreePrint(struct avlTree *p, void (*printVal)(void *))
     }
 }
 #endif
+
+/*
+ * ---------------------------------------------- Red-Black Tree
+ */
+
+static struct rbTreeNode *rbTreeNodeNew(int k, void *v);
+static void rbTreeNodeFree(struct rbTreeNode *p);
+static struct rbTreeNode *p(struct rbTreeNode *n);
+static struct rbTreeNode *l(struct rbTreeNode *n);
+static struct rbTreeNode *r(struct rbTreeNode *n);
+static int c(struct rbTreeNode *n);
+static void rbTreeInsertFixup(struct rbTree *t, struct rbTreeNode *z);
+static void rbTreeDeleteFixup(struct rbTree *t, struct rbTreeNode *x);
+static void rbTreeLeftRotate(struct rbTree *t, struct rbTreeNode *x);
+static void rbTreeRightRotate(struct rbTree *t, struct rbTreeNode *x);
+static void rbTreeTransplant(struct rbTree *t, struct rbTreeNode *u, struct rbTreeNode *v);
+static struct rbTreeNode *rbTreeNodeFindMin(struct rbTreeNode *n);
+
+struct rbTree *rbTreeNew(int (*key)(void *))
+{
+    if (!key)
+    {
+        printError("rbTreeNew key is NULL\n");
+        return NULL;
+    }
+    struct rbTree *p = malloc(sizeof(struct rbTree));
+    if (p)
+    {
+        // p->root = NULL;
+        p->root = RB_NIL;
+        p->size = 0;
+        p->key = key;
+        return p;
+    }
+    else
+    {
+        printError("rbTreeNew error");
+        return NULL;
+    }
+}
+void rbTreeFree(struct rbTree *p)
+{
+    if (!p)
+        return;
+    if (p->root && p->root != RB_NIL)
+    {
+        struct Stack *s = stackNew();
+        stackPush(s, p->root);
+        while ((struct rbTreeNode *)stackPeek(s))
+        {
+            struct rbTreeNode *n = (struct rbTreeNode *)stackPop(s);
+            if (n->right && n->right != RB_NIL)
+                stackPush(s, n->right);
+            if (n->left && n->left != RB_NIL)
+                stackPush(s, n->left);
+            rbTreeNodeFree(n);
+        }
+        stackFree(s);
+    }
+    free(p);
+}
+static struct rbTreeNode *rbTreeNodeNew(int k, void *v)
+{
+    struct rbTreeNode *p = malloc(sizeof(struct rbTreeNode));
+    if (!p)
+        return NULL;
+    p->parent = NULL;
+    p->left = p->right = RB_NIL;
+    p->color = RB_RED;
+    p->key = k;
+    p->val = v;
+    return p;
+}
+static void rbTreeNodeFree(struct rbTreeNode *p)
+{
+    if (p)
+        free(p);
+}
+int rbTreeInsert(struct rbTree *t, void *el)
+{
+    if (!t)
+    {
+        printError("rbTreeInsert t is NULL");
+        return 0;
+    }
+
+    int k = t->key(el);
+
+    struct rbTreeNode *y = RB_NIL;
+    struct rbTreeNode *x = t->root;
+    while (x != RB_NIL)
+    {
+        y = x;
+        if (k < x->key)
+            x = l(x);
+        else if (k > x->key)
+            x = r(x);
+        else
+        {
+            x->val = el;
+            return 1;
+        }
+    }
+
+    struct rbTreeNode *z = rbTreeNodeNew(k, el);
+    if (!z)
+    {
+        printError("rbTreeNodeNew error\n");
+        return 0;
+    }
+
+    z->parent = y;
+    if (y == RB_NIL)
+        t->root = z;
+    else if (z->key < y->key)
+        y->left = z;
+    else
+        y->right = z;
+
+    rbTreeInsertFixup(t, z);
+
+    t->size++;
+
+    return 1;
+}
+int rbTreeDelete(struct rbTree *t, void *el)
+{
+    if (!t)
+    {
+        printError("rbTreeDelete t is NULL");
+        return 0;
+    }
+
+    struct rbTreeNode *x = NULL;
+    struct rbTreeNode *y = NULL;
+    struct rbTreeNode *z = rbTreeSearch(t, el);
+
+    if (!z)
+        return 0;
+
+    y = z;
+    int yOriginalColor = c(y);
+    if (l(z) == RB_NIL)
+    {
+        x = r(z);
+        rbTreeTransplant(t, z, r(z));
+    }
+    else if (r(z) == RB_NIL)
+    {
+        x = l(z);
+        rbTreeTransplant(t, z, l(z));
+    }
+    else
+    {
+        y = rbTreeNodeFindMin(r(z));
+        yOriginalColor = c(y);
+        x = r(y);
+        if (p(y) == z)
+            x->parent = y;
+        else
+        {
+            rbTreeTransplant(t, y, r(y));
+            y->right = r(z);
+            r(y)->parent = y;
+        }
+        rbTreeTransplant(t, z, y);
+        y->left = l(z);
+        l(y)->parent = y;
+        y->color = c(z);
+    }
+    if (yOriginalColor == RB_BLACK)
+        rbTreeDeleteFixup(t, x);
+
+    rbTreeNodeFree(z);
+    t->size--;
+
+    return 1;
+}
+void *rbTreeSearch(struct rbTree *p, void *el)
+{
+    if (p && p->root)
+    {
+        int k = (*p->key)(el);
+        struct rbTreeNode *n = p->root;
+        while (n)
+        {
+            if (n->key == k)
+                return n;
+            n = n->key > k ? n->left : n->right;
+        }
+    }
+    return NULL;
+}
+void *rbTreeFindMin(struct rbTree *p)
+{
+    if (p && p->root && p->root != RB_NIL)
+    {
+        struct rbTreeNode *n = p->root;
+        while (n && n != RB_NIL)
+        {
+            if (l(n) && l(n) != RB_NIL)
+                n = l(n);
+            else
+                return n->val;
+        }
+        return NULL;
+    }
+    return NULL;
+}
+void *rbTreeFindMax(struct rbTree *p)
+{
+    if (p && p->root && p->root != RB_NIL)
+    {
+        struct rbTreeNode *n = p->root;
+        while (n && n != RB_NIL)
+        {
+            if (r(n) && r(n) != RB_NIL)
+                n = r(n);
+            else
+                return n->val;
+        }
+        return NULL;
+    }
+    return NULL;
+}
+static struct rbTreeNode *p(struct rbTreeNode *n)
+{
+    return n && n->parent ? n->parent : NULL;
+}
+static struct rbTreeNode *l(struct rbTreeNode *n)
+{
+    return n ? n->left : NULL;
+}
+static struct rbTreeNode *r(struct rbTreeNode *n)
+{
+    return n ? n->right : NULL;
+}
+static int c(struct rbTreeNode *n)
+{
+    return n ? n->color : RB_BLACK;
+}
+static void rbTreeInsertFixup(struct rbTree *t, struct rbTreeNode *z)
+{
+    struct rbTreeNode *y = NULL;
+    while (c(p(z)) == RB_RED)
+    {
+        if (p(z) == l(p(p(z))))
+        {
+            y = r(p(p(z)));
+            if (c(y) == RB_RED)
+            {
+                p(z)->color = RB_BLACK;  // case 1
+                y->color = RB_BLACK;     // case 1
+                p(p(z))->color = RB_RED; // case 1
+                z = p(p(z));             // case 1
+            }
+            else
+            {
+                if (z == r(p(z)))
+                {
+                    z = p(z);               // case 2
+                    rbTreeLeftRotate(t, z); // case 2
+                }
+                p(z)->color = RB_BLACK;        // case 3
+                p(p(z))->color = RB_RED;       // case 3
+                rbTreeRightRotate(t, p(p(z))); // case 3
+            }
+        }
+        else
+        {
+            y = l(p(p(z)));
+            if (c(y) == RB_RED)
+            {
+                p(z)->color = RB_BLACK;  // case 1
+                y->color = RB_BLACK;     // case 1
+                p(p(z))->color = RB_RED; // case 1
+                z = p(p(z));             // case 1
+            }
+            else
+            {
+                if (z == l(p(z)))
+                {
+                    z = p(z);                // case 2
+                    rbTreeRightRotate(t, z); // case 2
+                }
+                p(z)->color = RB_BLACK;       // case 3
+                p(p(z))->color = RB_RED;      // case 3
+                rbTreeLeftRotate(t, p(p(z))); // case 3
+            }
+        }
+    }
+    t->root->color = RB_BLACK;
+}
+static void rbTreeDeleteFixup(struct rbTree *t, struct rbTreeNode *x)
+{
+    while (x != t->root && c(x) == RB_BLACK)
+    {
+        if (x == l(p(x)))
+        {
+            struct rbTreeNode *w = r(p(x));
+            if (c(w) == RB_RED)
+            {
+                w->color = RB_BLACK;       // case 1
+                p(x)->color = RB_RED;      // case 1
+                rbTreeLeftRotate(t, p(x)); // case 1
+                w = r(p(x));               // case 1
+            }
+            if (c(l(w)) == RB_BLACK && c(r(w)) == RB_BLACK)
+            {
+                if (w)                 // xxxx
+                    w->color = RB_RED; // case 2
+                x = p(x);              // case 2
+            }
+            else
+            {
+                if (c(r(w)) == RB_BLACK)
+                {
+                    l(w)->color = RB_BLACK;  // case 3
+                    w->color = RB_RED;       // case 3
+                    rbTreeRightRotate(t, w); // case 3
+                    w = r(p(x));             // case 3
+                }
+                w->color = c(p(x));        // case 4
+                p(x)->color = RB_BLACK;    // case 4
+                r(w)->color = RB_BLACK;    // case 4
+                rbTreeLeftRotate(t, p(x)); // case 4
+                x = t->root;               // case 4
+            }
+        }
+        else
+        {
+            struct rbTreeNode *w = l(p(x));
+            if (c(w) == RB_RED)
+            {
+                w->color = RB_BLACK;        // case 1
+                p(x)->color = RB_RED;       // case 1
+                rbTreeRightRotate(t, p(x)); // case 1
+                w = l(p(x));                // case 1
+            }
+            if (c(r(w)) == RB_BLACK && c(l(w)) == RB_BLACK)
+            {
+                w->color = RB_RED; // case 2
+                x = p(x);          // case 2
+            }
+            else
+            {
+                if (c(l(w)) == RB_BLACK)
+                {
+                    r(w)->color = RB_BLACK; // case 3
+                    w->color = RB_RED;      // case 3
+                    rbTreeLeftRotate(t, w); // case 3
+                    w = l(p(x));            // case 3
+                }
+                w->color = c(p(x));         // case 4
+                p(x)->color = RB_BLACK;     // case 4
+                l(w)->color = RB_BLACK;     // case 4
+                rbTreeRightRotate(t, p(x)); // case 4
+                x = t->root;                // case 4
+            }
+        }
+    }
+    x->color = RB_BLACK;
+}
+static void rbTreeLeftRotate(struct rbTree *t, struct rbTreeNode *x)
+{
+    struct rbTreeNode *y = r(x);
+    x->right = l(y);
+    if (l(y) != RB_NIL)
+        l(y)->parent = x;
+    y->parent = p(x);
+    if (p(x) == RB_NIL)
+        t->root = y;
+    else if (x == l(p(x)))
+        p(x)->left = y;
+    else
+        p(x)->right = y;
+    y->left = x;
+    x->parent = y;
+}
+static void rbTreeRightRotate(struct rbTree *t, struct rbTreeNode *x)
+{
+    struct rbTreeNode *y = l(x);
+    x->left = r(y);
+    if (r(y) != RB_NIL)
+        r(y)->parent = x;
+    y->parent = p(x);
+    if (p(x) == RB_NIL)
+        t->root = y;
+    else if (x == r(p(x)))
+        p(x)->right = y;
+    else
+        p(x)->left = y;
+    y->right = x;
+    x->parent = y;
+}
+static void rbTreeTransplant(struct rbTree *t, struct rbTreeNode *u, struct rbTreeNode *v)
+{
+    if (p(u) == RB_NIL)
+        t->root = v;
+    else if (u == l(p(u)))
+        p(u)->left = v;
+    else
+        p(u)->right = v;
+    if (v) // xxxx
+        v->parent = p(u);
+}
+static struct rbTreeNode *rbTreeNodeFindMin(struct rbTreeNode *n)
+{
+    while (n && n != RB_NIL)
+    {
+        if (l(n) && l(n) != RB_NIL)
+            n = l(n);
+        else
+            return n;
+    }
+    return NULL;
+}
+#ifdef DEBUG
+static void rbTreeCheckParent(struct rbTreeNode *n)
+{
+    if (n && n != RB_NIL)
+    {
+        if (l(n) && l(n) != RB_NIL && p(l(n)) != n)
+            printError("rbTree parent set error\n");
+        if (r(n) && r(n) != RB_NIL && p(r(n)) != n)
+            printError("rbTree parent set error\n");
+    }
+}
+static void rbTreeCheckKey(struct rbTreeNode *n)
+{
+    if (n && n != RB_NIL)
+    {
+        if (l(n) && l(n) != RB_NIL && l(n)->key > n->key)
+            printError("rbTree left node error\n");
+        if (r(n) && r(n) != RB_NIL && r(n)->key < n->key)
+            printError("rbTree right node error\n");
+    }
+}
+static void rbTreeCheckRedColor(struct rbTreeNode *n)
+{
+    if (n && n != RB_NIL)
+    {
+        if (c(n) == RB_RED)
+        {
+            if (p(n) && p(n) != RB_NIL && c(p(n)) == RB_RED)
+                printError("rbTree color error");
+            if (l(n) && l(n) != RB_NIL && c(l(n)) == RB_RED)
+                printError("rbTree color error");
+            if (r(n) && r(n) != RB_NIL && c(r(n)) == RB_RED)
+                printError("rbTree color error");
+        }
+    }
+}
+static int rbTreeLeafBlackColorNumber(struct rbTreeNode *n)
+{
+    int i = 0;
+    while (n && n != RB_NIL)
+    {
+        if (c(n) == RB_BLACK)
+            i++;
+        n = p(n);
+    }
+    return i;
+}
+void rbTreePrint(struct rbTree *t, void (*printVal)(void *))
+{
+    if (t && t->root && t->root != RB_NIL && printVal)
+    {
+        struct Stack *stack = stackNew();
+        if (!stack)
+            goto freePointer;
+
+        struct Stack *leafStack = stackNew();
+        if (!leafStack)
+            goto freePointer;
+
+        stackPush(stack, t->root);
+        struct rbTreeNode *printed = NULL;
+        while (stackPeek(stack))
+        {
+            struct rbTreeNode *n = (struct rbTreeNode *)stackPop(stack);
+            struct rbTreeNode *l = n && n->left != RB_NIL ? n->left : NULL;
+            struct rbTreeNode *r = n && n->right != RB_NIL ? n->right : NULL;
+
+            if (!l && !r)
+                stackPush(leafStack, n);
+
+            rbTreeCheckKey(n);
+            rbTreeCheckParent(n);
+            rbTreeCheckRedColor(n);
+
+            if (l)
+            {
+                if (printed && printed->key >= l->key)
+                {
+                    printVal(n->val);
+                    printed = n;
+                    if (r)
+                        stackPush(stack, r);
+                }
+                else
+                {
+                    stackPush(stack, n);
+                    stackPush(stack, l);
+                }
+            }
+            else
+            {
+                printVal(n->val);
+                printed = n;
+                if (r)
+                    stackPush(stack, r);
+            }
+        }
+
+        if (stackSize(leafStack))
+        {
+            struct rbTreeNode *leaf = (struct rbTreeNode *)stackPeek(leafStack);
+            int blackNumber = rbTreeLeafBlackColorNumber(leaf);
+            if (!blackNumber)
+                printError("rbTree leaf black number error\n");
+            if (stackSize(leafStack) == 1)
+                if (blackNumber != 1)
+                    printError("rbTree leaf black number error\n");
+
+            while (stackPeek(leafStack))
+            {
+                leaf = (struct rbTreeNode *)stackPop(leafStack);
+                if (blackNumber != rbTreeLeafBlackColorNumber(leaf))
+                    printError("rbTree leaf black number error\n");
+            }
+        }
+    freePointer:
+        if (stack)
+            stackFree(stack);
+        if (leafStack)
+            stackFree(leafStack);
+    }
+}
+#endif

@@ -7,14 +7,18 @@ void test_stack();
 void test_queue();
 void test_avlTree();
 void test_avlTree2();
+void test_rbTree();
+void test_rbTree2();
 
 int main(int argc, char **argv)
 {
-    // test_print();
-    // test_stack();
-    // test_queue();
+    test_print();
+    test_stack();
+    test_queue();
     test_avlTree();
     test_avlTree2();
+    test_rbTree();
+    test_rbTree2();
 }
 
 void test_print()
@@ -230,4 +234,163 @@ void test_avlTree2()
     free(nums);
 
     avlTreeFree(tree);
+}
+
+int test_rbTreeIntKey(void *val)
+{
+    return *(int *)val;
+}
+void test_rbTreePrintfInt(void *val)
+{
+    if (val)
+        printf("%d ", *(int *)val);
+}
+void test_rbTreePrintfInt2(void *val)
+{
+    // printf("%d ", *(int *)val);
+}
+void test_rbTree()
+{
+    struct rbTree *tree = rbTreeNew(&test_rbTreeIntKey);
+    if (!tree)
+    {
+        printError("rbTreeNew error\n");
+        return;
+    }
+
+    printInfo("===============\n");
+
+    int nums[] = {110, 140, 120, 130, 145, 150, 250, 50, 100, 25, 77, 99, 33, 1, 2, 3, 4, 0, 8, 9};
+    int i;
+    for (i = 0; i < 20; i++)
+    {
+        printInfo("ins %2d %4d: ", i, nums[i]);
+        rbTreeInsert(tree, &nums[i]);
+        rbTreePrint(tree, test_rbTreePrintfInt);
+        printf("\n");
+    }
+
+    printInfo("==============\n");
+
+    int nums2[] = {10, 110, 5, 120, 11, 140, 130, 2, 15, 3, 4, 7, 6, 145, 1, 14, 12, 8, 13, 9, 0};
+    for (i = 0; i < 20; i++)
+    {
+        printInfo("del  %2d %4d: ", i, nums[i]);
+        rbTreeDelete(tree, &nums[i]);
+        rbTreePrint(tree, test_rbTreePrintfInt);
+        printf("\n");
+    }
+
+    rbTreeFree(tree);
+}
+void test_rbTree2()
+{
+    /* Copy from <<Data Structures and Algorithm Analysis in Java>> */
+
+    printInfo("==============\n");
+
+    struct rbTree *t = rbTreeNew(test_rbTreeIntKey);
+    if (!t)
+    {
+        printError("rbTreeNew error\n");
+        goto freePointer;
+    }
+
+    // RedBlackTree<Integer> t = new RedBlackTree<>();
+    int NUMS = 400000; // 400000;
+    int GAP = 35461;
+
+    printInfo("Checking... (no more output means success)\n");
+
+    int *nums = malloc(sizeof(int) * (NUMS + 1));
+    if (!nums)
+    {
+        printError("malloc nums error\n");
+        goto freePointer;
+    }
+
+    printInfo("one\n");
+
+    int i;
+    int operatorNum = 0;
+    for (i = GAP; i != 0; i = (i + GAP) % NUMS)
+    {
+        operatorNum++;
+        if (operatorNum % 10000 == 0)
+            printInfo("one %d \n", operatorNum);
+
+        // t.insert(i);
+        *(nums + i) = i;
+        rbTreeInsert(t, nums + i);
+        // rbTreePrint(t, test_rbTreePrintfInt2);
+    }
+    rbTreePrint(t, test_rbTreePrintfInt2);
+
+    printf("\n");
+    printInfo("two\n");
+
+    if ((*((int *)rbTreeFindMin(t))) != 1 || (*((int *)rbTreeFindMax(t))) != NUMS - 1)
+        printError("FindMin or FindMax error!\n");
+
+    printf("\n");
+    printInfo("three\n");
+
+    operatorNum = 0;
+    for (i = 1; i < NUMS; i++)
+    {
+        operatorNum++;
+        if (operatorNum % 10000 == 0)
+            printInfo("three %d \n", operatorNum);
+
+        if (!rbTreeSearch(t, nums + i))
+            printError("Find error1!\n");
+    }
+
+    printf("\n");
+    printInfo("four\n");
+
+    operatorNum = 0;
+    for (i = GAP; i != 0; i = (i + GAP) % NUMS)
+    {
+        operatorNum++;
+        if (operatorNum % 999 == 0 || operatorNum % 10000 == 0)
+        {
+            // printInfo("four %d \n", operatorNum);
+
+            rbTreeDelete(t, nums + i);
+            rbTreePrint(t, test_rbTreePrintfInt2);
+        }
+    }
+
+    printf("\n");
+    printInfo("two 2\n");
+
+    if ((*((int *)rbTreeFindMin(t))) != 1 || (*((int *)rbTreeFindMax(t))) != NUMS - 1)
+        printError("FindMin or FindMax error!\n");
+
+    printf("\n");
+    printInfo("three 2\n");
+
+    operatorNum = 0;
+    // for (i = 1; i < NUMS; i++)
+    for (i = GAP; i != 0; i = (i + GAP) % NUMS)
+    {
+        operatorNum++;
+        if (operatorNum % 10000 == 0)
+            printInfo("three 2 %d \n", operatorNum);
+
+        if (operatorNum % 999 == 0 || operatorNum % 10000 == 0)
+            continue;
+
+        if (!rbTreeSearch(t, nums + i))
+            printError("Find error1!\n");
+    }
+
+freePointer:
+    if (nums)
+        free(nums);
+    if (t)
+        rbTreeFree(t);
+
+    printInfo("end\n");
 }
