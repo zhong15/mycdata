@@ -95,4 +95,27 @@ static struct rbTreeNode *RB_NIL = &RB_NIL2;
 void rbTreePrint(struct rbTree *t, void (*printVal)(void *));
 #endif
 
+struct listNode
+{
+    struct listNode *prev;
+    struct listNode *next;
+    void *val;
+};
+struct List
+{
+    struct listNode *head;
+    struct listNode *tail;
+    int size;
+};
+struct List *listNew();
+void listFree(struct List *l);
+int listAdd(struct List *l, void *el);
+int listSet(struct List *l, int i, void *el);
+int listRemove(struct List *l, int i);
+void *listGet(struct List *l, int i);
+void *listHead(struct List *l);
+void *listTail(struct List *l);
+int listContains(struct List *l, void *el);
+int listSize(struct List *l);
+
 #endif

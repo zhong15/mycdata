@@ -9,6 +9,7 @@ void test_avlTree();
 void test_avlTree2();
 void test_rbTree();
 void test_rbTree2();
+void test_list();
 
 int main(int argc, char **argv)
 {
@@ -19,6 +20,7 @@ int main(int argc, char **argv)
     test_avlTree2();
     test_rbTree();
     test_rbTree2();
+    test_list();
 }
 
 void test_print()
@@ -393,4 +395,97 @@ freePointer:
         rbTreeFree(t);
 
     printInfo("end\n");
+}
+
+void test_list()
+{
+    struct List *l = listNew();
+    if (!l)
+    {
+        printError("listNew error\n");
+        return;
+    }
+
+    int nums[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    int i;
+    for (i = 0; i < 10; i++)
+    {
+        listAdd(l, &nums[i]);
+        if (listSize(l) != i + 1)
+        {
+            printError("listSize error\n");
+            goto freePointer;
+        }
+        if (*(int *)listHead(l) != nums[0])
+        {
+            printError("listHead error\n");
+            goto freePointer;
+        }
+        if (*(int *)listTail(l) != nums[i])
+        {
+            printError("listHead error\n");
+            goto freePointer;
+        }
+    }
+
+    for (i = 0; i < 10; i++)
+    {
+        if (*(int *)listGet(l, i) != nums[i])
+        {
+            printError("listGet error\n");
+            goto freePointer;
+        }
+        if (!listContains(l, &nums[i]))
+        {
+            printError("listContains error\n");
+            goto freePointer;
+        }
+    }
+
+    for (i = 1; i < 5; i++)
+    {
+        listSet(l, i, &nums[i * 2]);
+        if (*(int *)listGet(l, i) != nums[i * 2])
+        {
+            printError("listSet error\n");
+            goto freePointer;
+        }
+
+        // reset to old value for after operation
+        listSet(l, i, &nums[i]);
+        if (*(int *)listGet(l, i) != nums[i])
+        {
+            printError("listSet error\n");
+            goto freePointer;
+        }
+    }
+
+    listRemove(l, 8);
+    if (listContains(l, &nums[8]))
+    {
+        printError("listRemove error\n");
+        goto freePointer;
+    }
+    if (listSize(l) != 9)
+    {
+        printError("listRemove error\n");
+        goto freePointer;
+    }
+
+    listRemove(l, 0);
+    if (listContains(l, &nums[0]))
+    {
+        printError("listRemove error\n");
+        goto freePointer;
+    }
+    if (listSize(l) != 8)
+    {
+        printError("listRemove error\n");
+        goto freePointer;
+    }
+
+freePointer:
+    if (l)
+        listFree(l);
 }

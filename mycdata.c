@@ -1203,3 +1203,199 @@ void rbTreePrint(struct rbTree *t, void (*printVal)(void *))
     }
 }
 #endif
+
+static struct listNode *listNodeNew(void *val);
+static void listNodeFree();
+static struct listNode *listGetNode(struct List *l, int i);
+struct List *listNew()
+{
+    struct List *l = malloc(sizeof(struct List));
+    if (l)
+    {
+        l->head = l->tail = NULL;
+        l->size = 0;
+        return l;
+    }
+    else
+    {
+        printError("listNew error\n");
+        return NULL;
+    }
+}
+void listFree(struct List *l)
+{
+    if (l)
+    {
+        struct listNode *c = l->head;
+        struct listNode *n = NULL;
+        while (c)
+        {
+            n = c->next;
+            listNodeFree(c);
+            c = n;
+        }
+        free(l);
+    }
+}
+static struct listNode *listNodeNew(void *val)
+{
+    struct listNode *n = malloc(sizeof(struct listNode));
+    if (n)
+    {
+        n->prev = n->next = NULL;
+        n->val = val;
+        return n;
+    }
+    else
+    {
+        printError("listNodeNew error\n");
+        return NULL;
+    }
+}
+static void listNodeFree(struct listNode *n)
+{
+    if (n)
+        free(n);
+}
+int listAdd(struct List *l, void *el)
+{
+    if (!l)
+    {
+        printError("listAdd l is NULL\n");
+        return 0;
+    }
+
+    struct listNode *n = listNodeNew(el);
+    if (!n)
+    {
+        printError("listNodeNew error\n");
+        return 0;
+    }
+
+    if (!l->head)
+        l->head = n;
+    if (l->tail)
+    {
+        n->prev = l->tail;
+        l->tail->next = n;
+    }
+    l->tail = n;
+
+    l->size++;
+    return 1;
+}
+int listSet(struct List *l, int i, void *el)
+{
+    if (!l)
+    {
+        printError("listAdd l is NULL\n");
+        return 0;
+    }
+
+    if (i >= l->size)
+        return 0;
+
+    listGetNode(l, i)->val = el;
+
+    return 1;
+}
+int listRemove(struct List *l, int i)
+{
+    if (!l)
+    {
+        printError("listAdd l is NULL\n");
+        return 0;
+    }
+
+    if (i >= l->size)
+        return 0;
+
+    struct listNode *n = listGetNode(l, i);
+    if (n->prev)
+        n->prev->next = n->next;
+    if (n->next)
+        n->next->prev = n->prev;
+    if (n == l->head)
+        l->head = n->next;
+    if (n == l->tail)
+        l->tail = n->prev;
+
+    listNodeFree(n);
+
+    l->size--;
+    return 1;
+}
+void *listGet(struct List *l, int i)
+{
+    if (!l)
+    {
+        printError("listAdd l is NULL\n");
+        return NULL;
+    }
+
+    if (i >= l->size)
+        return NULL;
+
+    return listGetNode(l, i)->val;
+}
+void *listHead(struct List *l)
+{
+    if (!l)
+    {
+        printError("listAdd l is NULL\n");
+        return NULL;
+    }
+    return l->head ? l->head->val : NULL;
+}
+void *listTail(struct List *l)
+{
+    if (!l)
+    {
+        printError("listAdd l is NULL\n");
+        return NULL;
+    }
+    return l->tail ? l->tail->val : NULL;
+}
+int listContains(struct List *l, void *el)
+{
+    if (!l)
+    {
+        printError("listAdd l is NULL\n");
+        return 0;
+    }
+    if (l->size)
+    {
+        struct listNode *n = l->head;
+        while (n)
+        {
+            if (n->val == el)
+                return 1;
+            else
+                n = n->next;
+        }
+    }
+    return 0;
+}
+int listSize(struct List *l)
+{
+    return l ? l->size : 0;
+}
+static struct listNode *listGetNode(struct List *l, int i)
+{
+    if ((i << 1) < l->size)
+    {
+        struct listNode *n = l->head;
+        int j;
+        for (j = 0; j < i; j++)
+            n = n->next;
+        return n;
+    }
+    else
+    {
+        struct listNode *n = l->tail;
+        int j;
+        for (j = l->size - 1; j > i; j--)
+            n = n->prev;
+        return n;
+    }
+}
