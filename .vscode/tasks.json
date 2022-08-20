@@ -20,7 +20,7 @@
         {
             "type": "shell",
             "label": "Build with Makefile",
-            "command": "make",
+            "command": "make profile=DEBUG",
             "group": {
                 "kind": "build",
                 "isDefault": true
