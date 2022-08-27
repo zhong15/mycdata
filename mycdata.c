@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <limits.h>
 #include "mycdata.h"
 
 /*
@@ -1204,6 +1205,10 @@ void rbTreePrint(struct rbTree *t, void (*printVal)(void *))
 }
 #endif
 
+/*
+ * ---------------------------------------------- List
+ */
+
 static struct listNode *listNodeNew(void *val);
 static void listNodeFree();
 static struct listNode *listGetNode(struct List *l, int i);
@@ -1398,4 +1403,391 @@ static struct listNode *listGetNode(struct List *l, int i)
             n = n->prev;
         return n;
     }
+}
+
+/*
+ * ---------------------------------------------- Dict
+ */
+
+static struct dictEntry *dictEntryNew(int hash, void *key, void *val);
+static void dictEntryFree(struct dictEntry *e);
+static int hash2(int hash);
+static int tableIndex(int cap, int hash2);
+static int resize(struct Dict *d);
+static void rehash(struct Dict *d);
+static struct dictEntry *dictGetEntry(struct Dict *d, void *key);
+struct Dict *dictNew(int (*keyHash)(void *), int (*keyCompare)(void *, void *),
+                     int (*valCompare)(void *, void *))
+{
+    if (!keyHash)
+    {
+        printError("dictNew keyHash is NULL\n");
+        return NULL;
+    }
+    if (!keyCompare)
+    {
+        printError("dictNew keyCompare is NULL\n");
+        return NULL;
+    }
+    if (!valCompare)
+    {
+        printError("dictNew valCompare is NULL\n");
+        return NULL;
+    }
+    struct Dict *d = malloc(sizeof(struct Dict));
+    if (d)
+    {
+        d->table = NULL;
+        // factor = 0.75 = 3:4 = 6:8
+        d->threshold = 6;
+        d->cap = 8;
+        d->size = 0;
+        d->keyHash = keyHash;
+        d->keyCompare = keyCompare;
+        d->valCompare = valCompare;
+        return d;
+    }
+    else
+    {
+        printError("dictNew error\n");
+        return NULL;
+    }
+}
+void dictFree(struct Dict *d)
+{
+    if (d)
+    {
+        if (d->table)
+        {
+            int i;
+            for (i = 0; i < d->cap; i++)
+            {
+                struct dictEntry *c = *(d->table + i);
+                struct dictEntry *n = NULL;
+                while (c)
+                {
+                    n = c->next;
+                    dictEntryFree(c);
+                    c = n;
+                }
+            }
+
+            free(d->table);
+        }
+        free(d);
+    }
+}
+static struct dictEntry *dictEntryNew(int hash, void *key, void *val)
+{
+    struct dictEntry *entry = malloc(sizeof(struct dictEntry));
+    if (entry)
+    {
+        entry->hash = hash;
+        entry->key = key;
+        entry->val = val;
+        entry->next = NULL;
+        return entry;
+    }
+    else
+    {
+        printError("dictEntryNew error\n");
+        return NULL;
+    }
+}
+static void dictEntryFree(struct dictEntry *entry)
+{
+    if (entry)
+        free(entry);
+}
+int dictPut(struct Dict *d, void *key, void *val)
+{
+    if (!d)
+    {
+        printError("dictPut d is NULL\n");
+        return 0;
+    }
+    if (!key)
+    {
+        printError("dictPut key is NULL\n");
+        return 0;
+    }
+    if (d->size == 0)
+    {
+        if (d->table == NULL)
+        {
+            d->table = malloc(sizeof(struct dictEntry *) * d->cap);
+            if (d->table)
+            {
+                int i;
+                for (i = 0; i < d->cap; i++)
+                    *(d->table + i) = NULL;
+            }
+            else
+            {
+                printError("dictPut init table error\n");
+                return 0;
+            }
+        }
+    }
+
+    // maybe replace
+    int h = d->keyHash(key);
+    int i = tableIndex(d->cap, h);
+    struct dictEntry *entry = *(d->table + i);
+    while (entry)
+    {
+        if (entry->hash == h && !d->keyCompare(key, entry->key))
+        {
+            entry->val = val;
+            return 1;
+        }
+        entry = entry->next;
+    }
+
+    int recap = 0;
+    if (d->threshold == d->size)
+    {
+        recap = d->cap < (1 << 30);
+        if (!resize(d))
+        {
+            printError("resize error\n");
+            return 0;
+        }
+    }
+
+    if (recap)
+    {
+        h = d->keyHash(key);
+        i = tableIndex(d->cap, h);
+    }
+    entry = dictEntryNew(h, key, val);
+    if (!entry)
+    {
+        printError("dictPut error\n");
+        return 0;
+    }
+    entry->next = *(d->table + i);
+    *(d->table + i) = entry;
+
+    d->size++;
+    return 1;
+}
+int dictRemove(struct Dict *d, void *key)
+{
+    if (!d)
+    {
+        printError("dictRemove d is NULL\n");
+        return 0;
+    }
+    if (!key)
+    {
+        printError("dictRemove key is NULL\n");
+        return 0;
+    }
+
+    if (d->size == 0)
+        return 0;
+
+    int h = d->keyHash(key);
+    int i = tableIndex(d->cap, h);
+    struct dictEntry *p = NULL;
+    struct dictEntry *c = *(d->table + i);
+    while (c)
+    {
+        if (c->hash == h && !d->keyCompare(c->key, key))
+        {
+            if (p)
+                p->next = c->next;
+            else
+                *(d->table + i) = c->next;
+            dictEntryFree(c);
+            d->size--;
+            return 1;
+        }
+        p = c;
+        c = c->next;
+    }
+    return 0;
+}
+void *dictGet(struct Dict *d, void *key)
+{
+    if (!d)
+    {
+        printError("dictGet d is NULL\n");
+        return NULL;
+    }
+    if (!key)
+    {
+        printError("dictGet key is NULL\n");
+        return NULL;
+    }
+    struct dictEntry *entry = dictGetEntry(d, key);
+    return entry ? entry->val : NULL;
+}
+int dictContainsKey(struct Dict *d, void *key)
+{
+    if (!d)
+    {
+        printError("dictGet d is NULL\n");
+        return 0;
+    }
+    if (!key)
+    {
+        printError("dictGet key is NULL\n");
+        return 0;
+    }
+    struct dictEntry *entry = dictGetEntry(d, key);
+    return entry ? 1 : 0;
+}
+int dictContainsValue(struct Dict *d, void *val)
+{
+    if (!d)
+    {
+        printError("dictGet d is NULL\n");
+        return 0;
+    }
+    if (!val)
+    {
+        printError("dictGet val is NULL\n");
+        return 0;
+    }
+    if (d->size == 0)
+        return 0;
+    if (d->table)
+    {
+        int i;
+        for (i = 0; i < d->cap; i++)
+        {
+            struct dictEntry *entry = *(d->table + i);
+            while (entry)
+            {
+                if (!d->valCompare(entry->val, val))
+                    return 1;
+                entry = entry->next;
+            }
+        }
+    }
+    return 0;
+}
+int dictSize(struct Dict *d)
+{
+    return d ? d->size : 0;
+}
+#ifdef DEBUG
+void dictPrint(struct Dict *d, void (*print)(void *, void *))
+{
+    if (!d)
+    {
+        printError("dictPrint d is NULL\n");
+        return;
+    }
+    if (d->size)
+    {
+        int i;
+        for (i = 0; i < d->cap; i++)
+        {
+            struct dictEntry *entry = *(d->table + i);
+            while (entry)
+            {
+                print(entry->key, entry->val);
+                entry = entry->next;
+            }
+        }
+    }
+}
+#endif
+static int hash2(int hash)
+{
+    int hash2 = hash < 0 ? -hash : hash;
+    hash2 = hash2 ^ (hash2 >> 16);
+    return hash2;
+}
+static int tableIndex(int cap, int hash)
+{
+    return hash2(hash) & (cap - 1);
+}
+static int resize(struct Dict *d)
+{
+    if (d->cap < (1 << 30))
+    {
+        int newCap = d->cap << 1;
+        int newThreshold = d->threshold << 1;
+
+        struct dictEntry **newTable = realloc(d->table, sizeof(struct dictEntry *) * newCap);
+        if (!newTable)
+        {
+            printError("dict resize error\n");
+            return 0;
+        }
+
+        int i;
+        for (i = d->cap; i < newCap - 1; i++)
+            *(newTable + i) = NULL;
+
+        d->table = newTable;
+        d->threshold = newThreshold;
+        d->cap = newCap;
+
+        rehash(d);
+
+        return 1;
+    }
+    else if (d->threshold < INT_MAX)
+    {
+        d->threshold = INT_MAX;
+        return 1;
+    }
+    else
+    {
+        printError("dict cap is not enough\n");
+        return 0;
+    }
+}
+static void rehash(struct Dict *d)
+{
+    // cap -1 = 2 ^ 3 - 1 = 111     hash2 = hash & 111
+    // cap -1 = 2 ^ 4 - 1 = 1111    hash2 = hash & 1111
+    // cap -1 = 2 ^ 5 - 1 = 11111   hash2 = hash & 11111
+    // ...
+    int i;
+    for (i = (d->cap >> 1) - 1; i >= 0; i--)
+    {
+        struct dictEntry *h = *(d->table + i);
+        struct dictEntry *p = NULL;
+        struct dictEntry *c = *(d->table + i);
+        struct dictEntry *n = NULL;
+        while (c)
+        {
+            n = c->next;
+            int j = tableIndex(d->cap, c->hash);
+            if (j == i)
+                p = c;
+            else
+            {
+                c->next = *(d->table + j);
+                *(d->table + j) = c;
+                if (h == c)
+                    h = *(d->table + i) = n;
+                else
+                    p->next = n;
+            }
+            c = n;
+        }
+    }
+}
+static struct dictEntry *dictGetEntry(struct Dict *d, void *key)
+{
+    if (d->size == 0)
+        return NULL;
+
+    int h = d->keyHash(key);
+    int i = tableIndex(d->cap, h);
+    struct dictEntry *entry = *(d->table + i);
+    while (entry)
+    {
+        if (entry->hash == h && !d->keyCompare(key, entry->key))
+            return entry;
+        entry = entry->next;
+    }
+    return NULL;
 }

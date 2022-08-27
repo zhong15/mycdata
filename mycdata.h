@@ -1,5 +1,6 @@
 #ifndef MYCDATA_H_
 #define MYCDATA_H_
+
 #ifndef RB_RED
 #define RB_RED 1
 #endif
@@ -117,5 +118,35 @@ void *listHead(struct List *l);
 void *listTail(struct List *l);
 int listContains(struct List *l, void *el);
 int listSize(struct List *l);
+
+struct dictEntry
+{
+    int hash;
+    void *key;
+    void *val;
+    struct dictEntry *next;
+};
+struct Dict
+{
+    struct dictEntry **table;
+    int threshold;
+    int cap;
+    int size;
+    int (*keyHash)(void *);
+    int (*keyCompare)(void *, void *);
+    int (*valCompare)(void *, void *);
+};
+struct Dict *dictNew(int (*keyHash)(void *), int (*keyCompare)(void *, void *),
+                     int (*valCompare)(void *, void *));
+void dictFree(struct Dict *d);
+int dictPut(struct Dict *d, void *key, void *val);
+int dictRemove(struct Dict *d, void *key);
+void *dictGet(struct Dict *d, void *key);
+int dictContainsKey(struct Dict *d, void *key);
+int dictContainsValue(struct Dict *d, void *val);
+int dictSize(struct Dict *d);
+#ifdef DEBUG
+void dictPrint(struct Dict *d, void (*print)(void *, void *));
+#endif
 
 #endif

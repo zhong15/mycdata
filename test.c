@@ -10,6 +10,7 @@ void test_avlTree2();
 void test_rbTree();
 void test_rbTree2();
 void test_list();
+void test_dict();
 
 int main(int argc, char **argv)
 {
@@ -21,6 +22,7 @@ int main(int argc, char **argv)
     test_rbTree();
     test_rbTree2();
     test_list();
+    test_dict();
 }
 
 void test_print()
@@ -488,4 +490,203 @@ void test_list()
 freePointer:
     if (l)
         listFree(l);
+}
+
+int dictKeyHash(void *key)
+{
+    return *(int *)key;
+}
+int dictKeyCompare(void *key1, void *key2)
+{
+    if (key1 == key2)
+        return 0;
+    return (*(int *)key1) - (*(int *)key2);
+}
+int dictValCompare(void *val1, void *val2)
+{
+    if (val1 == val2)
+        return 0;
+    return (*(int *)val1) - (*(int *)val2);
+}
+void dictEntryPrint(void *key, void *val)
+{
+    if (key)
+    {
+        printf("k: %d", *(int *)key);
+    }
+    if (val)
+    {
+        printf(" val: %d", *(int *)val);
+    }
+    printf("\n");
+}
+void test_dict()
+{
+    struct Dict *dict = dictNew(dictKeyHash, dictKeyCompare, dictValCompare);
+    if (!dict)
+    {
+        printError("dictNew error\n");
+        return;
+    }
+
+    int len = 100;
+    int a[len];
+    int i;
+    for (i = 0; i < len; i++)
+        a[i] = i;
+
+    // add
+    for (i = 0; i < len; i++)
+    {
+        int *val = (int *)dictGet(dict, &a[i]);
+        if (val)
+        {
+            printError("dict error\n");
+            goto freePointer;
+        }
+
+        if (!dictPut(dict, &a[i], &a[i]))
+        {
+            printError("dictPut error\n");
+            goto freePointer;
+        }
+
+        val = (int *)dictGet(dict, &a[i]);
+        if (!val || *val != a[i])
+        {
+            printError("dictGet error\n");
+            goto freePointer;
+        }
+    }
+
+    for (i = 0; i < len; i++)
+    {
+        if (!dictContainsKey(dict, &a[i]))
+        {
+            printError("dictContainsKey error\n");
+            goto freePointer;
+        }
+        if (!dictContainsValue(dict, &a[i]))
+        {
+            printError("dictContainsValue error\n");
+            goto freePointer;
+        }
+    }
+
+    // replace
+    for (i = 1; i < len / 2; i++)
+    {
+        int *val = (int *)dictGet(dict, &a[i]);
+        if (!val || *val != a[i])
+        {
+            printError("dict error\n");
+            goto freePointer;
+        }
+
+        // replace
+        if (!dictPut(dict, &a[i], &a[i * 2]))
+        {
+            printError("dictPut error\n");
+            goto freePointer;
+        }
+
+        val = (int *)dictGet(dict, &a[i]);
+        if (!val || *val != a[i * 2])
+        {
+            printError("dictGet error\n");
+            goto freePointer;
+        }
+    }
+
+    for (i = len / 2; i < len; i++)
+    {
+        int *val = (int *)dictGet(dict, &a[i]);
+        if (!val || *val != a[i])
+        {
+            printError("dict error\n");
+            goto freePointer;
+        }
+    }
+
+    for (i = 0; i < len; i++)
+    {
+        if (!dictContainsKey(dict, &a[i]))
+        {
+            printError("dictContainsKey error\n");
+            goto freePointer;
+        }
+    }
+
+    dictPrint(dict, dictEntryPrint);
+
+    for (i = 1; i < len / 2; i += 2)
+    {
+        if (dictContainsValue(dict, &a[i]))
+        {
+            printError("dictContainsValue error\n");
+            goto freePointer;
+        }
+    }
+
+    for (i = len / 2; i < len; i++)
+    {
+        if (!dictContainsValue(dict, &a[i]))
+        {
+            printError("dictContainsValue error\n");
+            goto freePointer;
+        }
+    }
+
+    if (dictSize(dict) != len)
+    {
+        printError("dictSize error\n");
+        goto freePointer;
+    }
+
+    for (i = 0; i < len / 2; i++)
+    {
+        if (!dictContainsKey(dict, &a[i]))
+        {
+            printError("dictContainsKey error\n");
+            goto freePointer;
+        }
+        dictRemove(dict, &a[i]);
+        if (dictContainsKey(dict, &a[i]))
+        {
+            printError("dictContainsKey error\n");
+            goto freePointer;
+        }
+    }
+
+    for (i = 0; i < len / 2; i++)
+    {
+        if (dictContainsValue(dict, &a[i]))
+        {
+            printError("dictContainsValue error\n");
+            goto freePointer;
+        }
+    }
+
+    for (i = len / 2; i < len; i++)
+    {
+        if (!dictContainsKey(dict, &a[i]))
+        {
+            printError("dictContainsKey error\n");
+            goto freePointer;
+        }
+        if (!dictContainsValue(dict, &a[i]))
+        {
+            printError("dictContainsValue error\n");
+            goto freePointer;
+        }
+    }
+
+    if (dictSize(dict) != len / 2)
+    {
+        printError("dictSize error\n");
+        goto freePointer;
+    }
+
+freePointer:
+    dictFree(dict);
 }
