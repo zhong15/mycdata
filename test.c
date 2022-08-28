@@ -11,6 +11,7 @@ void test_rbTree();
 void test_rbTree2();
 void test_list();
 void test_dict();
+void test_binaryHeap();
 
 int main(int argc, char **argv)
 {
@@ -23,6 +24,7 @@ int main(int argc, char **argv)
     test_rbTree2();
     test_list();
     test_dict();
+    test_binaryHeap();
 }
 
 void test_print()
@@ -689,4 +691,143 @@ void test_dict()
 
 freePointer:
     dictFree(dict);
+}
+
+int bhKey(void *el)
+{
+    return el ? (*(int *)el) : -1;
+}
+void bhPrintInt(void *el)
+{
+    printf("%d ", el ? (*(int *)el) : -1);
+}
+void test_binaryHeap()
+{
+    struct binaryHeap *h = bhNew(bhKey);
+    if (!h)
+    {
+        printError("bhNew error\n");
+        return;
+    }
+
+    // insert
+
+    int len = 11;
+    int a[] = {13, 14, 16, 19, 21, 19, 68, 65, 26, 32, 31};
+    int i;
+    for (i = 0; i < len; i++)
+    {
+        if (!bhInsert(h, &a[i]))
+        {
+            printError("bhInsert error\n");
+            goto freePointer;
+        }
+        bhPrint(h, bhPrintInt);
+    }
+
+    if (bhSize(h) != len)
+    {
+        printError("bhSize error\n");
+        goto freePointer;
+    }
+
+    if ((*(int *)bhFindMin(h)) != 13)
+    {
+        printError("bhFindMin error\n");
+        goto freePointer;
+    }
+    if ((*(int *)bhFindMax(h)) != 68)
+    {
+        printError("bhFindMax error\n");
+        goto freePointer;
+    }
+
+    // delete
+
+    if (!bhDeleteMin(h))
+    {
+        printError("bhDeleteMin error\n");
+        goto freePointer;
+    }
+
+    bhPrint(h, bhPrintInt);
+
+    if (bhSize(h) != len - 1)
+    {
+        printError("bhSize error\n");
+        goto freePointer;
+    }
+
+    if ((*(int *)bhFindMin(h)) != 14)
+    {
+        printError("bhFindMin error\n");
+        goto freePointer;
+    }
+    if ((*(int *)bhFindMax(h)) != 68)
+    {
+        printError("bhFindMax error\n");
+        goto freePointer;
+    }
+
+    // insert
+    int oldLen = len;
+
+    len = 1000000;
+    int *b = malloc(sizeof(int) * len);
+    for (i = 0; i < len; i++)
+    {
+        *(b + i) = (i & 1) ? len - i : i;
+        bhInsert(h, b + i);
+    }
+
+    bhPrint(h, bhPrintInt);
+
+    if (bhSize(h) != oldLen + len - 1)
+    {
+        printError("bhSize error\n");
+        goto freePointer;
+    }
+
+    if ((*(int *)bhFindMin(h)) != 0)
+    {
+        printError("bhFindMin error\n");
+        goto freePointer;
+    }
+    if ((*(int *)bhFindMax(h)) != (len - 1))
+    {
+        printError("bhFindMax error\n");
+        goto freePointer;
+    }
+
+    // delete
+
+    if (!bhDeleteMin(h))
+    {
+        printError("bhDeleteMin error\n");
+        goto freePointer;
+    }
+
+    bhPrint(h, bhPrintInt);
+
+    if (bhSize(h) != oldLen + len - 2)
+    {
+        printError("bhSize error\n");
+        goto freePointer;
+    }
+
+    if ((*(int *)bhFindMin(h)) != 1)
+    {
+        printError("bhFindMin error\n");
+        goto freePointer;
+    }
+    if ((*(int *)bhFindMax(h)) != (len - 1))
+    {
+        printError("bhFindMax error\n");
+        goto freePointer;
+    }
+
+freePointer:
+    bhFree(h);
+    if (b)
+        free(b);
 }

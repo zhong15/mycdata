@@ -149,4 +149,22 @@ int dictSize(struct Dict *d);
 void dictPrint(struct Dict *d, void (*print)(void *, void *));
 #endif
 
+struct binaryHeap
+{
+    void **table;
+    int cap;
+    int size;
+    int (*key)(void *);
+};
+struct binaryHeap *bhNew(int (*key)(void *));
+void bhFree(struct binaryHeap *h);
+int bhInsert(struct binaryHeap *h, void *el);
+int bhDeleteMin(struct binaryHeap *h);
+void *bhFindMin(struct binaryHeap *h);
+void *bhFindMax(struct binaryHeap *h);
+int bhSize(struct binaryHeap *h);
+#ifdef DEBUG
+void bhPrint(struct binaryHeap *h, void (*print)(void *));
+#endif
+
 #endif

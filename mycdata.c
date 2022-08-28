@@ -1791,3 +1791,260 @@ static struct dictEntry *dictGetEntry(struct Dict *d, void *key)
     }
     return NULL;
 }
+
+/*
+ * ---------------------------------------------- binary heap
+ */
+
+static int bhp(int i);
+static int bhl(int i);
+static int bhr(int i);
+struct binaryHeap *bhNew(int (*key)(void *))
+{
+    if (!key)
+    {
+        printError("bhNew key is NULL\n");
+        return NULL;
+    }
+    struct binaryHeap *h = malloc(sizeof(struct binaryHeap));
+    if (h)
+    {
+        h->table = NULL;
+        h->cap = 8;
+        h->size = 0;
+        h->key = key;
+        return h;
+    }
+    else
+    {
+        printError("bhNew error\n");
+        return NULL;
+    }
+}
+void bhFree(struct binaryHeap *h)
+{
+    if (h)
+    {
+        if (h->table)
+            free(h->table);
+        free(h);
+    }
+}
+int bhInsert(struct binaryHeap *h, void *el)
+{
+    if (!h)
+    {
+        printError("bhSearch h is NULL\n");
+        return 0;
+    }
+    if (!el)
+    {
+        printError("bhSearch el is NULL\n");
+        return 0;
+    }
+    if (!h->table)
+    {
+        h->table = malloc(sizeof(void *) * h->cap);
+        if (!h->table)
+        {
+            printError("bhSearch init table error\n");
+            return 0;
+        }
+    }
+
+    if ((h->size + 1) == h->cap)
+    {
+        int newCap = h->cap << 1;
+        void **newTable = realloc(h->table, sizeof(void *) * newCap);
+        if (!newTable)
+        {
+            printError("bhInsert error\n");
+            return 0;
+        }
+        h->cap = newCap;
+        h->table = newTable;
+    }
+
+    int k = h->key(el);
+    int i = h->size + 1;
+    while (i > 1)
+    {
+        int p = bhp(i);
+        if (k < h->key(*(h->table + p)))
+        {
+            *(h->table + i) = *(h->table + p);
+            i = p;
+        }
+        else
+            break;
+    }
+    *(h->table + i) = el;
+    h->size++;
+    return 1;
+}
+int bhDeleteMin(struct binaryHeap *h)
+{
+    if (!h)
+    {
+        printError("bhSearch h is NULL\n");
+        return 0;
+    }
+    if (!h->size)
+        return 0;
+
+    h->size--;
+
+    if (h->size)
+    {
+        *(h->table + 1) = *(h->table + h->size + 1);
+        int k = h->key(*(h->table + 1));
+        int i = 1;
+        for (;;)
+        {
+            int l = bhl(i);
+            int r = bhr(i);
+            int x;
+            int xk;
+            if (l <= h->size && r <= h->size)
+            {
+                int lk = h->key(*(h->table + l));
+                int rk = h->key(*(h->table + r));
+                x = lk < rk ? l : r;
+                xk = lk < rk ? lk : rk;
+            }
+            else if (l <= h->size)
+            {
+                x = l;
+                xk = h->key(*(h->table + l));
+            }
+            else if (r <= h->size)
+            {
+                x = r;
+                xk = h->key(*(h->table + r));
+            }
+            else
+                break;
+
+            if (k > xk)
+            {
+                void *c = *(h->table + i);
+                *(h->table + i) = *(h->table + x);
+                *(h->table + x) = c;
+                i = x;
+            }
+            else
+                break;
+        }
+    }
+
+    return 1;
+}
+void *bhFindMin(struct binaryHeap *h)
+{
+    if (!h)
+    {
+        printError("bhFindMin h is NULL\n");
+        return NULL;
+    }
+    if (h->size == 0)
+        return NULL;
+    return *(h->table + 1);
+}
+void *bhFindMax(struct binaryHeap *h)
+{
+    if (!h)
+    {
+        printError("bhFindMax h is NULL\n");
+        return NULL;
+    }
+    if (h->size == 0)
+        return NULL;
+    int i = (h->size >> 1) + 1;
+    int maxKey;
+    void *max = NULL;
+    for (; i <= h->size; i++)
+    {
+        void *el = *(h->table + i);
+        if (max)
+        {
+            int k = h->key(el);
+            if (k > maxKey)
+            {
+                maxKey = k;
+                max = el;
+            }
+        }
+        else
+        {
+            maxKey = h->key(el);
+            max = el;
+        }
+    }
+    return max;
+}
+int bhSize(struct binaryHeap *h)
+{
+    if (!h)
+    {
+        printError("bhFindMax h is NULL\n");
+        return 0;
+    }
+    return h->size;
+}
+#ifdef DEBUG
+void bhPrint(struct binaryHeap *h, void (*print)(void *))
+{
+    if (!h)
+    {
+        printError("bhPrint h is NULL\n");
+        return;
+    }
+    if (h->size)
+    {
+        int i;
+        for (i = 1; i <= h->size; i++)
+        {
+            print(*(h->table + i));
+
+            int k = h->key(*(h->table + i));
+
+            int l = bhl(i);
+            if (l <= h->size)
+            {
+                int lk;
+                if (k > (lk = h->key(*(h->table + l))))
+                {
+                    printf("\n");
+                    printError("bhPrint check left error, k=%d,lk=%d\n", k, lk);
+                    return;
+                }
+            }
+
+            int r = bhr(i);
+            if (r <= h->size)
+            {
+                int rk;
+                if (k > (rk = h->key(*(h->table + r))))
+                {
+                    printf("\n");
+                    printError("bhPrint check right error, k=%d,rk=%d\n", k, rk);
+                    return;
+                }
+            }
+        }
+        printf("\n");
+    }
+}
+#endif
+static int bhp(int i)
+{
+    return i >> 1;
+}
+static int bhl(int i)
+{
+    return i << 1;
+}
+static int bhr(int i)
+{
+    return (i << 1) + 1;
+}
