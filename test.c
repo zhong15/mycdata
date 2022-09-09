@@ -12,6 +12,7 @@ void test_rbTree2();
 void test_list();
 void test_dict();
 void test_binaryHeap();
+void test_skipList();
 
 int main(int argc, char **argv)
 {
@@ -25,6 +26,7 @@ int main(int argc, char **argv)
     test_list();
     test_dict();
     test_binaryHeap();
+    test_skipList();
 }
 
 void test_print()
@@ -830,4 +832,121 @@ freePointer:
     bhFree(h);
     if (b)
         free(b);
+}
+
+int slKey(void *el)
+{
+    return el ? (*(int *)el) : -1;
+}
+void slPrintInt(void *el)
+{
+    printf("%d ", el ? (*(int *)el) : -1);
+}
+void test_skipList()
+{
+    struct skipList *sl = skipListNew(slKey);
+    if (!sl)
+    {
+        return;
+    }
+
+    const int len = 100000;
+    int nums[len];
+    int i;
+    for (i = 0; i < len; i++)
+        nums[i] = i;
+
+    printDebug("---------- test skipListInsert\n");
+
+    const int step = 10;
+
+    int total = 0;
+    for (i = 0; i < step; i++)
+    {
+        int j;
+        for (j = i; j < len; j += step)
+        {
+            printDebug("---------- test skipListInsert: %d\n", j);
+
+            if (skipListGet(sl, nums[j]))
+            {
+                printError("skipListGet error: el alreadly exists\n");
+                goto freePointer;
+            }
+
+            int insert = skipListInsert(sl, &nums[j]);
+            if (!insert)
+            {
+                printError("skipListInsert error\n");
+                goto freePointer;
+            }
+
+            if (skipListSize(sl) != (++total))
+            {
+                printError("skipListSize error\n");
+                goto freePointer;
+            }
+
+            void *got = skipListGet(sl, j);
+            if (!got)
+            {
+                printError("skipListGet error: el not insert\n");
+                goto freePointer;
+            }
+
+            if ((*((int *)got)) != j)
+            {
+                printError("skipListGet error: el insert error\n");
+                goto freePointer;
+            }
+        }
+    }
+
+    printDebug("---------- test skipListDelete\n");
+
+    total = len;
+    for (i = 0; i < step; i++)
+    {
+        int j;
+        for (j = i; j < len; j += step)
+        {
+            printDebug("---------- test skipListDelete: %d\n", j);
+            void *got = skipListGet(sl, nums[j]);
+            if (!got)
+            {
+                printError("skipListGet error: el not exists\n");
+                goto freePointer;
+            }
+
+            if ((*((int *)got)) != j)
+            {
+                printError("skipListGet error: el delete error\n");
+                goto freePointer;
+            }
+
+            int delete = skipListDelete(sl, j);
+            if (!delete)
+            {
+                printError("skipListDelete error\n");
+                goto freePointer;
+            }
+
+            if (skipListSize(sl) != (--total))
+            {
+                printError("skipListSize error\n");
+                goto freePointer;
+            }
+
+            got = skipListGet(sl, j);
+            if (got)
+            {
+                printError("skipListGet error: el not delete\n");
+                goto freePointer;
+            }
+        }
+    }
+
+    skipListPrint(sl, slPrintInt);
+freePointer:
+    skipListFree(sl);
 }

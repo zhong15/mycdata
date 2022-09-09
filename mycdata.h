@@ -9,10 +9,22 @@
 #define RB_BLACK 0
 #endif
 
+#ifndef SL_MAX_LEVEL
+#define SL_MAX_LEVEL 64
+#endif
+
+/*
+ * ---------------------------------------------- Print Message
+ */
+
 void printError(const char *msg, ...);
 void printWarn(const char *msg, ...);
 void printInfo(const char *msg, ...);
 void printDebug(const char *msg, ...);
+
+/*
+ * ---------------------------------------------- Stack
+ */
 
 struct Stack
 {
@@ -27,6 +39,10 @@ void *stackPop(struct Stack *p);
 void *stackPeek(struct Stack *p);
 int stackSize(struct Stack *p);
 void stackClear(struct Stack *p);
+
+/*
+ * ---------------------------------------------- Queue
+ */
 
 struct Queue
 {
@@ -43,6 +59,10 @@ void *queuePoll(struct Queue *p);
 void *queuePeek(struct Queue *p);
 int queueSize(struct Queue *p);
 void queueClear(struct Queue *p);
+
+/*
+ * ---------------------------------------------- Avl Tree
+ */
 
 struct avlTreeNode
 {
@@ -66,6 +86,10 @@ void *avlTreeFindMax(struct avlTree *p);
 #ifdef DEBUG
 void avlTreePrint(struct avlTree *p, void (*printVal)(void *));
 #endif
+
+/*
+ * ---------------------------------------------- Red-Black Tree
+ */
 
 /* copy from CLRS 3 */
 struct rbTreeNode
@@ -96,6 +120,10 @@ static struct rbTreeNode *RB_NIL = &RB_NIL2;
 void rbTreePrint(struct rbTree *t, void (*printVal)(void *));
 #endif
 
+/*
+ * ---------------------------------------------- List
+ */
+
 struct listNode
 {
     struct listNode *prev;
@@ -118,6 +146,10 @@ void *listHead(struct List *l);
 void *listTail(struct List *l);
 int listContains(struct List *l, void *el);
 int listSize(struct List *l);
+
+/*
+ * ---------------------------------------------- Dict
+ */
 
 struct dictEntry
 {
@@ -149,6 +181,10 @@ int dictSize(struct Dict *d);
 void dictPrint(struct Dict *d, void (*print)(void *, void *));
 #endif
 
+/*
+ * ---------------------------------------------- binary heap
+ */
+
 struct binaryHeap
 {
     void **table;
@@ -165,6 +201,35 @@ void *bhFindMax(struct binaryHeap *h);
 int bhSize(struct binaryHeap *h);
 #ifdef DEBUG
 void bhPrint(struct binaryHeap *h, void (*print)(void *));
+#endif
+
+/*
+ * ---------------------------------------------- Skip List
+ */
+
+struct skipListNode
+{
+    int maxLevel;
+    struct skipListNode **next;
+    int key;
+    void *val;
+};
+struct skipList
+{
+    int time0;
+    int maxLevel;
+    struct skipListNode *head;
+    int size;
+    int (*key)(void *);
+};
+struct skipList *skipListNew(int (*key)(void *));
+void skipListFree(struct skipList *sl);
+int skipListInsert(struct skipList *sl, void *el);
+int skipListDelete(struct skipList *sl, int key);
+void *skipListGet(struct skipList *sl, int key);
+int skipListSize(struct skipList *sl);
+#ifdef DEBUG
+void skipListPrint(struct skipList *sl, void (*print)(void *));
 #endif
 
 #endif

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <limits.h>
+#include <time.h>
 #include "mycdata.h"
 
 /*
@@ -2048,3 +2049,409 @@ static int bhr(int i)
 {
     return (i << 1) + 1;
 }
+
+/*
+ * ---------------------------------------------- Skip List
+ */
+
+static struct skipListNode *skipListNodeNew(int maxLevel, int key, void *val);
+static void skipListNodeFree(struct skipListNode *n);
+static int skipListInsertCore(struct skipList *sl, struct skipListNode *n);
+static int skipListDeleteCore(struct skipList *sl,
+                              struct skipListNode *p, struct skipListNode *c);
+static struct skipListNode *skipListGetCore(struct skipList *sl, int key);
+static int skipListHeadMaxLevel(struct skipList *sl);
+static int randomLevel(struct skipList *sl);
+struct skipList *skipListNew(int (*key)(void *))
+{
+    if (!key)
+    {
+        printError("skipListNew key is NULL\n");
+        return 0;
+    }
+    struct skipList *sl = malloc(sizeof(struct skipList));
+    if (sl)
+    {
+        sl->time0 = time(0);
+        sl->maxLevel = 0;
+        sl->head = NULL;
+        sl->size = 0;
+        sl->key = key;
+        return sl;
+    }
+    printError("skipListNew error\n");
+    return NULL;
+}
+void skipListFree(struct skipList *sl)
+{
+    if (sl)
+    {
+        struct skipListNode *c = sl->head;
+        struct skipListNode *n = NULL;
+        while (c)
+        {
+            if (c->next)
+                n = *(c->next + 0);
+            else
+                n = NULL;
+            skipListNodeFree(c);
+            c = n;
+        }
+        free(sl);
+    }
+}
+static struct skipListNode *skipListNodeNew(int maxLevel, int key, void *val)
+{
+    struct skipListNode *n = malloc(sizeof(struct skipListNode));
+    if (n)
+    {
+        n->maxLevel = maxLevel;
+        n->next = calloc(maxLevel + 1, sizeof(struct skipListNode *));
+        if (!n->next)
+            goto newError;
+        n->key = key;
+        n->val = val;
+        return n;
+    }
+newError:
+    if (n)
+        free(n);
+    printError("skipListNodeNew error\n");
+    return NULL;
+}
+static void skipListNodeFree(struct skipListNode *n)
+{
+    if (n)
+    {
+        if (n->next)
+            free(n->next);
+        free(n);
+    }
+}
+int skipListInsert(struct skipList *sl, void *el)
+{
+    if (!sl)
+    {
+        printError("skipListInsert sl is NULL\n");
+        return 0;
+    }
+    if (!el)
+    {
+        printError("skipListInsert el is NULL\n");
+        return 0;
+    }
+
+    int key = sl->key(el);
+
+    if (sl->size)
+    {
+        struct skipListNode *n = skipListGetCore(sl, key);
+        if (n)
+        {
+            n->val = el;
+            return 1;
+        }
+
+        int level = randomLevel(sl);
+        n = skipListNodeNew(level, key, el);
+        if (!n)
+        {
+            printError("skipListInsert error\n");
+            return 0;
+        }
+
+        return skipListInsertCore(sl, n);
+    }
+    else
+    {
+        // head node maxLevel is SL_MAX_LEVEL - 1
+        struct skipListNode *n = skipListNodeNew(SL_MAX_LEVEL - 1, key, el);
+        if (!n)
+        {
+            printError("skipListInsert error\n");
+            return 0;
+        }
+
+        sl->maxLevel = 0;
+        sl->head = n;
+        sl->size++;
+
+        return 1;
+    }
+}
+static int skipListInsertCore(struct skipList *sl, struct skipListNode *n)
+{
+    int level = n->maxLevel;
+    int key = n->key;
+    void *val = n->val;
+
+    if (key < sl->head->key)
+    {
+        n->key = sl->head->key;
+        n->val = sl->head->val;
+        sl->head->key = key;
+        sl->head->val = val;
+        key = n->key;
+        val = n->val;
+    }
+
+    // do insert sl node
+    struct skipListNode *c = sl->head;
+    struct skipListNode *cn = NULL;
+    while (c && level >= 0)
+    {
+        if (c->key < key)
+        {
+            if ((cn = *(c->next + level)))
+            {
+                if (cn->key > key)
+                {
+                    // do insert [c, n, cn]
+                    *(c->next + level) = n;
+                    *(n->next + level) = cn;
+                    level--;
+                }
+                else
+                    c = cn;
+            }
+            else
+            {
+                // do insert [c, n]
+                *(c->next + level) = n;
+                level--;
+            }
+        }
+        else
+            break;
+    }
+
+    sl->size++;
+
+    sl->maxLevel = skipListHeadMaxLevel(sl);
+
+    return 1;
+}
+int skipListDelete(struct skipList *sl, int key)
+{
+    if (!sl)
+    {
+        printError("skipListDelete sl is NULL\n");
+        return 0;
+    }
+
+    if (!sl->size)
+        return 0;
+
+    int level = sl->maxLevel;
+    struct skipListNode *p = NULL;
+    struct skipListNode *c = sl->head;
+    struct skipListNode *n = NULL;
+    while (c)
+    {
+        if (c->key == key)
+            return skipListDeleteCore(sl, p, c);
+        else if ((n = *(c->next + level)))
+        {
+            if (n->key < key)
+            {
+                p = c;
+                c = n;
+            }
+            else if (n->key > key)
+            {
+                if (level)
+                    level--;
+                else
+                    return 0;
+            }
+            else
+                return skipListDeleteCore(sl, c, n);
+        }
+        else
+        {
+            if (level)
+                level--;
+            else
+                return 0;
+        }
+    }
+    return 0;
+}
+static int skipListDeleteCore(struct skipList *sl,
+                              struct skipListNode *p, struct skipListNode *c)
+{
+    if (sl->size == 1)
+    {
+        skipListNodeFree(c);
+        sl->head = NULL;
+    }
+    else
+    {
+        if (c == sl->head)
+        {
+            struct skipListNode *n = *(c->next + 0);
+
+            c->key = n->key;
+            c->val = n->val;
+
+            p = c; // c is a head node, the node n just has one prev node
+            c = n;
+        }
+
+        int i;
+        for (i = c->maxLevel; i >= 0; i--)
+        {
+            struct skipListNode *n = NULL;
+            while (p)
+            {
+                if ((n = *(p->next + i)) == c)
+                {
+                    *(p->next + i) = *(c->next + i);
+                    break;
+                }
+                else
+                    p = n;
+            }
+        }
+
+        skipListNodeFree(c);
+    }
+
+    sl->size--;
+
+    sl->maxLevel = skipListHeadMaxLevel(sl);
+
+    return 1;
+}
+void *skipListGet(struct skipList *sl, int key)
+{
+    if (!sl)
+    {
+        printError("sl is NULL\n");
+        return NULL;
+    }
+    if (!sl->size)
+        return NULL;
+
+    struct skipListNode *n = skipListGetCore(sl, key);
+    return n ? n->val : NULL;
+}
+static struct skipListNode *skipListGetCore(struct skipList *sl, int key)
+{
+    if (!sl->size)
+        return NULL;
+
+    int level = sl->maxLevel;
+    struct skipListNode *c = sl->head;
+    struct skipListNode *n = NULL;
+    while (c)
+    {
+        if (c->key == key)
+            return c;
+        else if ((n = *(c->next + level)))
+        {
+            if (n->key < key)
+                c = n;
+            else if (n->key > key)
+            {
+                if (level)
+                    level--;
+                else
+                    return NULL;
+            }
+            else
+                return n;
+        }
+        else
+        {
+            if (level)
+                level--;
+            else
+                return NULL;
+        }
+    }
+    return NULL;
+}
+int skipListSize(struct skipList *sl)
+{
+    return sl ? sl->size : 0;
+}
+static int skipListHeadMaxLevel(struct skipList *sl)
+{
+    if (sl->size)
+    {
+        int maxLevel = 0;
+        while (maxLevel < SL_MAX_LEVEL && *(sl->head->next + maxLevel))
+            maxLevel++;
+        return max(maxLevel - 1, 0);
+    }
+    else
+        return -1;
+}
+static int randomLevel(struct skipList *sl)
+{
+    sl->time0++;
+    srand(sl->time0);
+    int mask = 127;
+    int half = 64;
+    int level = 0;
+    while ((rand() & mask) < half)
+        level++;
+    level = level < SL_MAX_LEVEL ? level : SL_MAX_LEVEL - 1;
+    return level;
+}
+#ifdef DEBUG
+void skipListPrint(struct skipList *sl, void (*print)(void *))
+{
+    if (sl->size)
+    {
+        int level = SL_MAX_LEVEL - 1; // sl->maxLevel;
+        // not include head
+        int levelLinkedNodeTotal[level + 1];
+        // init all element value 0
+        int i;
+        for (i = 0; i < level + 1; i++)
+            levelLinkedNodeTotal[i] = 0;
+
+        struct skipListNode *n = sl->head;
+        while (n)
+        {
+            if (n != sl->head)
+                for (i = 0; i <= n->maxLevel; i++)
+                    levelLinkedNodeTotal[i]++;
+            n = *(n->next + 0);
+        }
+
+        for (i = 0; i < level + 1; i++)
+            printDebug("level %d linked node total: %d\n", i, levelLinkedNodeTotal[i]);
+
+        for (; level >= 0; level--)
+        {
+            printDebug("skipListPrint check level linked node total: %d\n", level);
+
+            int total = 0;
+            struct skipListNode *p = NULL;
+            struct skipListNode *c = sl->head;
+            while (c)
+            {
+                if (c != sl->head)
+                    total++;
+                if (p && p->key > c->key)
+                {
+                    printError("skipListPrint linked node sort(prev: %d, curr: %d) error\n",
+                               p->key, c->key);
+                    return;
+                }
+                p = c;
+                c = *(c->next + level);
+            }
+            if (total != levelLinkedNodeTotal[level])
+            {
+                printError("skipListPrint level: %d, linked node total: %d <> %d error\n",
+                           level, levelLinkedNodeTotal[level], total);
+                return;
+            }
+        }
+    }
+}
+#endif
