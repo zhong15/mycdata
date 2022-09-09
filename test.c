@@ -900,6 +900,8 @@ void test_skipList()
                 goto freePointer;
             }
         }
+
+        skipListPrint(sl, slPrintInt);
     }
 
     printDebug("---------- test skipListDelete\n");
@@ -944,9 +946,9 @@ void test_skipList()
                 goto freePointer;
             }
         }
-    }
 
-    skipListPrint(sl, slPrintInt);
+        skipListPrint(sl, slPrintInt);
+    }
 freePointer:
     skipListFree(sl);
 }
