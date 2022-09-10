@@ -1,7 +1,10 @@
 {
     "files.associations": {
         "mycdata.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "__locale": "c",
+        "string": "c",
+        "vector": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }
