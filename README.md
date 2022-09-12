@@ -1,6 +1,6 @@
 # mycdata
 
-## 学习一些常见的数据结构，并使用 C 语言实现
+## 学习一些常见的数据结构，并使用 ANSI C 实现
 
 - 栈 Stack
 - 队列 Queue
@@ -11,3 +11,10 @@
 - 二叉堆 binary heap
 - 跳表 Skip List
 - Bit Set
+
+## 编译测试
+
+```
+make profile=DEBUG
+./a.o
+```
