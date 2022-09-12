@@ -964,6 +964,8 @@ void test_bitSet()
         return;
     }
 
+    // test on get
+
     int i;
     int max0 = 100;
     for (i = 0; i < max0; i++)
@@ -972,40 +974,36 @@ void test_bitSet()
         if (bitSetGet(bs, i))
         {
             printError("bitSetGet %d error\n", i);
-            return;
+            goto freePointer;
         }
         if (!bitSetOn(bs, i))
         {
             printError("bitSetOn %d error\n", i);
-            return;
+            goto freePointer;
         }
         if (!bitSetGet(bs, i))
         {
             printError("bitSetGet %d error\n", i);
-            return;
+            goto freePointer;
         }
     }
-
-    printf("\n");
-    bitSetPrint(bs);
-    printf("\n");
 
     int max1 = 1000;
     printInfo("i: %d\n", max1);
     if (bitSetGet(bs, max1))
     {
         printError("bitSetGet %d error\n", max1);
-        return;
+        goto freePointer;
     }
     if (!bitSetOn(bs, max1))
     {
         printError("bitSetOn %d error\n", max1);
-        return;
+        goto freePointer;
     }
     if (!bitSetGet(bs, max1))
     {
         printError("bitSetGet %d error\n", max1);
-        return;
+        goto freePointer;
     }
 
     for (i = max0; i < max1; i++)
@@ -1013,12 +1011,78 @@ void test_bitSet()
         if (bitSetGet(bs, i))
         {
             printError("bitSetGet %d error\n", i);
-            return;
+            goto freePointer;
+        }
+    }
+
+    // test off get
+
+    int off = 64;
+    if (!bitSetGet(bs, off))
+    {
+        printError("bitSetGet %d error\n", off);
+        goto freePointer;
+    }
+    if (!bitSetOff(bs, off))
+    {
+        printError("bitSetOff %d error\n", off);
+        goto freePointer;
+    }
+    if (bitSetGet(bs, off))
+    {
+        printError("bitSetGet %d error\n", off);
+        goto freePointer;
+    }
+
+    // test on off get
+    for (i = 0; i <= max1; i++)
+    {
+        if (i < off)
+        {
+            if (!bitSetGet(bs, i))
+            {
+                printError("bitSetGet %d error\n", i);
+                goto freePointer;
+            }
+        }
+        else if (i == off)
+        {
+            if (bitSetGet(bs, i))
+            {
+                printError("bitSetGet %d error\n", i);
+                goto freePointer;
+            }
+        }
+        else if (i > off && i < max0)
+        {
+            if (!bitSetGet(bs, i))
+            {
+                printError("bitSetGet %d error\n", i);
+                goto freePointer;
+            }
+        }
+        else if (i >= max0 && i < max1)
+        {
+            if (bitSetGet(bs, i))
+            {
+                printError("bitSetGet %d error\n", i);
+                goto freePointer;
+            }
+        }
+        else if (i == max1)
+        {
+            if (!bitSetGet(bs, i))
+            {
+                printError("bitSetGet %d error\n", i);
+                goto freePointer;
+            }
         }
     }
 
     printf("\n");
     bitSetPrint(bs);
 
-    bitSetFree(bs);
+freePointer:
+    if (bs)
+        bitSetFree(bs);
 }
