@@ -13,6 +13,7 @@ void test_list();
 void test_dict();
 void test_binaryHeap();
 void test_skipList();
+void test_bitSet();
 
 int main(int argc, char **argv)
 {
@@ -27,6 +28,7 @@ int main(int argc, char **argv)
     test_dict();
     test_binaryHeap();
     test_skipList();
+    test_bitSet();
 }
 
 void test_print()
@@ -951,4 +953,72 @@ void test_skipList()
     }
 freePointer:
     skipListFree(sl);
+}
+
+void test_bitSet()
+{
+    struct bitSet *bs = bitSetNew();
+    if (!bs)
+    {
+        printError("bitSetNew error\n");
+        return;
+    }
+
+    int i;
+    int max0 = 100;
+    for (i = 0; i < max0; i++)
+    {
+        printInfo("i: %d\n", i);
+        if (bitSetGet(bs, i))
+        {
+            printError("bitSetGet %d error\n", i);
+            return;
+        }
+        if (!bitSetOn(bs, i))
+        {
+            printError("bitSetOn %d error\n", i);
+            return;
+        }
+        if (!bitSetGet(bs, i))
+        {
+            printError("bitSetGet %d error\n", i);
+            return;
+        }
+    }
+
+    printf("\n");
+    bitSetPrint(bs);
+    printf("\n");
+
+    int max1 = 1000;
+    printInfo("i: %d\n", max1);
+    if (bitSetGet(bs, max1))
+    {
+        printError("bitSetGet %d error\n", max1);
+        return;
+    }
+    if (!bitSetOn(bs, max1))
+    {
+        printError("bitSetOn %d error\n", max1);
+        return;
+    }
+    if (!bitSetGet(bs, max1))
+    {
+        printError("bitSetGet %d error\n", max1);
+        return;
+    }
+
+    for (i = max0; i < max1; i++)
+    {
+        if (bitSetGet(bs, i))
+        {
+            printError("bitSetGet %d error\n", i);
+            return;
+        }
+    }
+
+    printf("\n");
+    bitSetPrint(bs);
+
+    bitSetFree(bs);
 }

@@ -2455,3 +2455,180 @@ void skipListPrint(struct skipList *sl, void (*print)(void *))
     }
 }
 #endif
+
+/*
+ * ---------------------------------------------- Bit Set
+ */
+
+static int bitSetIndex(int i);
+static int bitSetBit(int i);
+static int bitSetResize(struct bitSet *bs, int index);
+struct bitSet *bitSetNew()
+{
+    struct bitSet *bs = malloc(sizeof(struct bitSet));
+    if (bs)
+    {
+        bs->size = 0;
+        bs->els = NULL;
+        return bs;
+    }
+    else
+    {
+        printError("bitSetNew error\n");
+        return NULL;
+    }
+}
+void bitSetFree(struct bitSet *bs)
+{
+    if (bs)
+    {
+        if (bs->els)
+            free(bs->els);
+        free(bs);
+    }
+}
+int bitSetOn(struct bitSet *bs, int i)
+{
+    if (!bs)
+    {
+        printError("bitSetOn bs is NULL\n");
+        return 0;
+    }
+    if (i < 0)
+    {
+        printError("bitSetOn i is error\n");
+        return 0;
+    }
+    int index = bitSetIndex(i);
+    if (!bitSetResize(bs, index))
+    {
+        printError("bitSetOn resize error\n");
+        return 0;
+    }
+    int bit = bitSetBit(i);
+    *(bs->els + index) = (*(bs->els + index)) | (((UINT64)1) << bit);
+    return 1;
+}
+int bitSetOff(struct bitSet *bs, int i)
+{
+    if (!bs)
+    {
+        printError("bitSetOff bs is NULL\n");
+        return 0;
+    }
+    if (i < 0)
+    {
+        printError("bitSetOff i is error\n");
+        return 0;
+    }
+    int index = bitSetIndex(i);
+    if (!bitSetResize(bs, index))
+    {
+        printError("bitSetOff resize error\n");
+        return 0;
+    }
+    int bit = bitSetBit(i);
+    *(bs->els + index) = (*(bs->els + index)) & (ULONG_MAX ^ (((UINT64)1) << bit));
+    return 1;
+}
+int bitSetGet(struct bitSet *bs, int i)
+{
+    if (!bs)
+    {
+        printError("bitSetOff bs is NULL\n");
+        return 0;
+    }
+    if (i < 0)
+    {
+        printError("bitSetOff i is error\n");
+        return 0;
+    }
+    int index = bitSetIndex(i);
+    if (index >= bs->size)
+        return 0;
+    int bit = bitSetBit(i);
+    return ((*(bs->els + index)) & (((UINT64)1) << bit)) ? 1 : 0;
+}
+#ifdef DEBUG
+void bitSetPrint(struct bitSet *bs)
+{
+    if (!bs)
+        return;
+    if (!bs->size)
+        return;
+    int i;
+    for (i = 0; i < 64; i++)
+    {
+        if (i % 4 == 0)
+        {
+            if (i < 10)
+                printf("%d    ", i);
+            else
+                printf("%d   ", i);
+        }
+    }
+    printf("\n");
+    for (i = 0; i < bs->size; i++)
+    {
+        UINT64 x = *(bs->els + i);
+        int j;
+        for (j = 0; j < 64; j++)
+        {
+            if ((x & (((UINT64)1) << j)))
+                putchar('1');
+            else
+                putchar('0');
+            if ((j + 1) % 4 == 0)
+                putchar(' ');
+        }
+        putchar('\n');
+    }
+}
+#endif
+static int bitSetIndex(int i)
+{
+    return i / 64;
+}
+static int bitSetBit(int i)
+{
+    return i % 64;
+}
+static int bitSetResize(struct bitSet *bs, int index)
+{
+    int newSize = index + 1;
+    if (newSize > INT_MAX)
+    {
+        printError("bitSetResize index is too large\n");
+        return 0;
+    }
+    if (newSize <= bs->size)
+        return 1;
+    if (bs->els)
+    {
+        UINT64 *newEls = (UINT64 *)realloc(bs->els, sizeof(UINT64) * newSize);
+        if (newEls)
+        {
+            if (newSize > bs->size)
+            {
+                int i;
+                for (i = bs->size; i < newSize; i++)
+                    *(bs->els + i) = 0;
+            }
+            bs->els = newEls;
+            bs->size = newSize;
+            return 1;
+        }
+    }
+    else
+    {
+        bs->els = calloc(newSize, sizeof(UINT64));
+        if (bs->els)
+        {
+            bs->size = newSize;
+            return 1;
+        }
+    }
+
+    printError("bitSetResize error\n");
+    return 0;
+}
