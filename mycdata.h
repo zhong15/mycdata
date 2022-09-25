@@ -105,7 +105,7 @@ void *avlTreeFindMin(struct avlTree *p);
 void *avlTreeFindMax(struct avlTree *p);
 #ifdef DEBUG
 void avlTreePrint(struct avlTree *p, void (*printVal)(void *));
-#endif
+#endif // DEBUG
 
 /*
  * -------------------------------------------------------------- Red-Black Tree
@@ -147,7 +147,7 @@ static struct rbTreeNode RB_NIL2;
 static struct rbTreeNode *RB_NIL = &RB_NIL2;
 #ifdef DEBUG
 void rbTreePrint(struct rbTree *t, void (*printVal)(void *));
-#endif
+#endif // DEBUG
 
 /*
  * ------------------------------------------------------------------------ List
@@ -208,7 +208,7 @@ int dictContainsValue(struct Dict *d, void *val);
 int dictSize(struct Dict *d);
 #ifdef DEBUG
 void dictPrint(struct Dict *d, void (*print)(void *, void *));
-#endif
+#endif // DEBUG
 
 /*
  * ----------------------------------------------------------------- binary heap
@@ -230,7 +230,7 @@ void *bhFindMax(struct binaryHeap *h);
 int bhSize(struct binaryHeap *h);
 #ifdef DEBUG
 void bhPrint(struct binaryHeap *h, void (*print)(void *));
-#endif
+#endif // DEBUG
 
 /*
  * ------------------------------------------------------------------- Skip List
@@ -263,7 +263,7 @@ void *skipListGet(struct skipList *sl, int key);
 int skipListSize(struct skipList *sl);
 #ifdef DEBUG
 void skipListPrint(struct skipList *sl, void (*print)(void *));
-#endif
+#endif // DEBUG
 
 /*
  * --------------------------------------------------------------------- Bit Set

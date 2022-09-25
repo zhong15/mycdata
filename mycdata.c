@@ -664,7 +664,7 @@ void avlTreePrint(struct avlTree *p, void (*printVal)(void *))
         stackFree(stack);
     }
 }
-#endif
+#endif // DEBUG
 
 /*
  * -------------------------------------------------------------- Red-Black Tree
@@ -1204,7 +1204,7 @@ void rbTreePrint(struct rbTree *t, void (*printVal)(void *))
             stackFree(leafStack);
     }
 }
-#endif
+#endif // DEBUG
 
 /*
  * ------------------------------------------------------------------------ List
@@ -1696,7 +1696,7 @@ void dictPrint(struct Dict *d, void (*print)(void *, void *))
         }
     }
 }
-#endif
+#endif // DEBUG
 static int hash2(int hash)
 {
     int hash2 = hash < 0 ? -hash : hash;
@@ -2036,7 +2036,7 @@ void bhPrint(struct binaryHeap *h, void (*print)(void *))
         printf("\n");
     }
 }
-#endif
+#endif // DEBUG
 static int bhp(int i)
 {
     return i >> 1;
@@ -2454,7 +2454,7 @@ void skipListPrint(struct skipList *sl, void (*print)(void *))
         }
     }
 }
-#endif
+#endif // DEBUG
 
 /*
  * --------------------------------------------------------------------- Bit Set
@@ -2584,7 +2584,7 @@ void bitSetPrint(struct bitSet *bs)
         putchar('\n');
     }
 }
-#endif
+#endif // DEBUG
 static int bitSetIndex(int i)
 {
     return i / 64;
