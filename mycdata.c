@@ -6,7 +6,7 @@
 #include "mycdata.h"
 
 /*
- * ---------------------------------------------- Common
+ * ---------------------------------------------------------------------- Common
  */
 
 static int max(int a, int b)
@@ -15,7 +15,7 @@ static int max(int a, int b)
 }
 
 /*
- * ---------------------------------------------- Print Message
+ * --------------------------------------------------------------- Print Message
  */
 
 void printError(const char *msg, ...)
@@ -64,7 +64,7 @@ void printDebug(const char *msg, ...)
 }
 
 /*
- * ---------------------------------------------- Stack
+ * ----------------------------------------------------------------------- Stack
  */
 
 struct Stack *stackNew()
@@ -131,7 +131,7 @@ void stackClear(struct Stack *p)
 }
 
 /*
- * ---------------------------------------------- Queue
+ * ----------------------------------------------------------------------- Queue
  */
 
 struct Queue *queueNew()
@@ -223,7 +223,7 @@ void queueClear(struct Queue *p)
 }
 
 /*
- * ---------------------------------------------- Avl Tree
+ * -------------------------------------------------------------------- Avl Tree
  */
 
 static struct avlTreeNode *avlTreeNodeNew(int k, void *v);
@@ -667,7 +667,7 @@ void avlTreePrint(struct avlTree *p, void (*printVal)(void *))
 #endif
 
 /*
- * ---------------------------------------------- Red-Black Tree
+ * -------------------------------------------------------------- Red-Black Tree
  */
 
 static struct rbTreeNode *rbTreeNodeNew(int k, void *v);
@@ -1207,7 +1207,7 @@ void rbTreePrint(struct rbTree *t, void (*printVal)(void *))
 #endif
 
 /*
- * ---------------------------------------------- List
+ * ------------------------------------------------------------------------ List
  */
 
 static struct listNode *listNodeNew(void *val);
@@ -1407,7 +1407,7 @@ static struct listNode *listGetNode(struct List *l, int i)
 }
 
 /*
- * ---------------------------------------------- Dict
+ * ------------------------------------------------------------------------ Dict
  */
 
 static struct dictEntry *dictEntryNew(int hash, void *key, void *val);
@@ -1794,7 +1794,7 @@ static struct dictEntry *dictGetEntry(struct Dict *d, void *key)
 }
 
 /*
- * ---------------------------------------------- binary heap
+ * ----------------------------------------------------------------- binary heap
  */
 
 static int bhp(int i);
@@ -2051,7 +2051,7 @@ static int bhr(int i)
 }
 
 /*
- * ---------------------------------------------- Skip List
+ * ------------------------------------------------------------------- Skip List
  */
 
 static struct skipListNode *skipListNodeNew(int maxLevel, int key, void *val);
@@ -2457,7 +2457,7 @@ void skipListPrint(struct skipList *sl, void (*print)(void *))
 #endif
 
 /*
- * ---------------------------------------------- Bit Set
+ * --------------------------------------------------------------------- Bit Set
  */
 
 static int bitSetIndex(int i);

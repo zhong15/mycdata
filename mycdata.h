@@ -3,50 +3,38 @@
 
 #ifndef INT8
 #define INT8 char
-#endif
+#endif // INT8
 
 #ifndef INT16
 #define INT16 short int
-#endif
+#endif // INT16
 
 #ifndef INT32
 #define INT32 int
-#endif
+#endif // INT32
 
 #ifndef INT64
 #define INT64 long int
-#endif
+#endif // INT64
 
 #ifndef UINT8
 #define UINT8 unsigned char
-#endif
+#endif // UINT8
 
 #ifndef UINT16
 #define UINT16 unsigned short int
-#endif
+#endif // UINT16
 
 #ifndef UINT32
 #define UINT32 unsigned int
-#endif
+#endif // UINT32
 
 #ifndef UINT64
 #define UINT64 unsigned long int
-#endif
-
-#ifndef RB_RED
-#define RB_RED 1
-#endif
-
-#ifndef RB_BLACK
-#define RB_BLACK 0
-#endif
-
-#ifndef SL_MAX_LEVEL
-#define SL_MAX_LEVEL 64
-#endif
+#endif // UINT64
 
 /*
- * ---------------------------------------------- Print Message
+ * --------------------------------------------------------------- Print Message
  */
 
 void printError(const char *msg, ...);
@@ -55,7 +43,7 @@ void printInfo(const char *msg, ...);
 void printDebug(const char *msg, ...);
 
 /*
- * ---------------------------------------------- Stack
+ * ----------------------------------------------------------------------- Stack
  */
 
 struct Stack
@@ -73,7 +61,7 @@ int stackSize(struct Stack *p);
 void stackClear(struct Stack *p);
 
 /*
- * ---------------------------------------------- Queue
+ * ----------------------------------------------------------------------- Queue
  */
 
 struct Queue
@@ -93,7 +81,7 @@ int queueSize(struct Queue *p);
 void queueClear(struct Queue *p);
 
 /*
- * ---------------------------------------------- Avl Tree
+ * -------------------------------------------------------------------- Avl Tree
  */
 
 struct avlTreeNode
@@ -120,10 +108,19 @@ void avlTreePrint(struct avlTree *p, void (*printVal)(void *));
 #endif
 
 /*
- * ---------------------------------------------- Red-Black Tree
+ * -------------------------------------------------------------- Red-Black Tree
  */
 
 /* copy from CLRS 3 */
+
+#ifndef RB_RED
+#define RB_RED 1
+#endif // RB_RED
+
+#ifndef RB_BLACK
+#define RB_BLACK 0
+#endif // RB_BLACK
+
 struct rbTreeNode
 {
     struct rbTreeNode *parent;
@@ -153,7 +150,7 @@ void rbTreePrint(struct rbTree *t, void (*printVal)(void *));
 #endif
 
 /*
- * ---------------------------------------------- List
+ * ------------------------------------------------------------------------ List
  */
 
 struct listNode
@@ -180,7 +177,7 @@ int listContains(struct List *l, void *el);
 int listSize(struct List *l);
 
 /*
- * ---------------------------------------------- Dict
+ * ------------------------------------------------------------------------ Dict
  */
 
 struct dictEntry
@@ -214,7 +211,7 @@ void dictPrint(struct Dict *d, void (*print)(void *, void *));
 #endif
 
 /*
- * ---------------------------------------------- binary heap
+ * ----------------------------------------------------------------- binary heap
  */
 
 struct binaryHeap
@@ -236,8 +233,12 @@ void bhPrint(struct binaryHeap *h, void (*print)(void *));
 #endif
 
 /*
- * ---------------------------------------------- Skip List
+ * ------------------------------------------------------------------- Skip List
  */
+
+#ifndef SL_MAX_LEVEL
+#define SL_MAX_LEVEL 64
+#endif // SL_MAX_LEVEL
 
 struct skipListNode
 {
@@ -265,7 +266,7 @@ void skipListPrint(struct skipList *sl, void (*print)(void *));
 #endif
 
 /*
- * ---------------------------------------------- Bit Set
+ * --------------------------------------------------------------------- Bit Set
  */
 
 struct bitSet
@@ -280,6 +281,6 @@ int bitSetOff(struct bitSet *bs, int i);
 int bitSetGet(struct bitSet *bs, int i);
 #ifdef DEBUG
 void bitSetPrint(struct bitSet *bs);
-#endif
+#endif // DEBUG
 
-#endif
+#endif // MYCDATA_H_
